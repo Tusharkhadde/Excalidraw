@@ -40,6 +40,8 @@ export function Canvas({ roomId, socket }: { socket: WebSocket; roomId: string }
   const [gridEnabled, setGridEnabled] = useState(false);
   const [dotsEnabled, setDotsEnabled] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [strokeColor, setStrokeColor] = useState("#1e1e1e");
+  const [fillColor, setFillColor] = useState("transparent");
 
   const themeMode = isDark ? "dark" : "light";
 
@@ -94,6 +96,14 @@ export function Canvas({ roomId, socket }: { socket: WebSocket; roomId: string }
   }, [isDark, game]);
 
   useEffect(() => {
+    game?.setStrokeColor(strokeColor);
+  }, [strokeColor, game]);
+
+  useEffect(() => {
+    game?.setFillColor(fillColor);
+  }, [fillColor, game]);
+
+  useEffect(() => {
     if (shapes.length > 0) {
       setShowHint(false);
     }
@@ -129,6 +139,8 @@ export function Canvas({ roomId, socket }: { socket: WebSocket; roomId: string }
       fileInputRef.current?.click();
     });
     nextGame.setZoomChangeHandler((value) => setZoom(value));
+    nextGame.setStrokeColor(strokeColor);
+    nextGame.setFillColor(fillColor);
 
     const syncInterval = setInterval(() => {
       setShapes([...nextGame.getShapes()]);
@@ -142,7 +154,8 @@ export function Canvas({ roomId, socket }: { socket: WebSocket; roomId: string }
 
   const handleToolChange = (toolId: string) => {
     if (locked && toolId !== "lock") return;
-    setSelectedTool(toolId as Tool);
+    const tool = toolId as Tool;
+    setSelectedTool(tool);
   };
 
   const handleClearCanvas = useCallback(() => {
@@ -334,12 +347,18 @@ export function Canvas({ roomId, socket }: { socket: WebSocket; roomId: string }
           }}
           onBlur={commitText}
           placeholder="Type something..."
-          className="absolute z-30 min-w-[120px] resize-none border-none bg-transparent p-0 text-[20px] leading-tight outline-none placeholder:text-gray-300"
+          className="absolute z-30 min-w-[140px] resize-none overflow-hidden rounded-none border-0 border-b-2 border-dashed border-blue-400 bg-transparent p-0 text-[20px] leading-tight outline-none placeholder:text-gray-300"
           style={{
             left: textInput.x,
-            top: textInput.y - 22,
-            fontFamily: "Virgil, Segoe UI Emoji, sans-serif",
+            top: textInput.y - 26,
+            fontFamily: "Caveat, Virgil, Segoe UI Emoji, sans-serif",
+            fontSize: "20px",
+            lineHeight: "1.2",
             color: textColor,
+            background: isDark ? "rgba(0,0,0,0.3)" : "rgba(59,130,246,0.06)",
+            borderRadius: "2px",
+            padding: "4px 2px",
+            minHeight: "32px",
           }}
         />
       )}
@@ -355,8 +374,6 @@ export function Canvas({ roomId, socket }: { socket: WebSocket; roomId: string }
       <div className={`absolute bottom-4 left-1/2 z-20 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border ${isDark ? "border-white/10 bg-gray-900/80 text-gray-300" : "border-[#e8e6f2] bg-white/90 text-[#777b8b]"} px-3 py-1.5 text-[11px] shadow-[0_12px_28px_-22px_rgba(16,24,40,0.45)] backdrop-blur transition-colors duration-300`}>
         <span className={`h-1.5 w-1.5 rounded-full ${isDark ? "bg-blue-400" : "bg-blue-500"}`} />
         <span className="font-medium capitalize">{selectedTool}</span>
-        <span className={isDark ? "text-gray-500" : "text-[#d1d5e3]"}>•</span>
-        <span>{shapes.length} shape{shapes.length === 1 ? "" : "s"}</span>
         <span className={isDark ? "text-gray-500" : "text-[#d1d5e3]"}>•</span>
         <span>{Math.round(zoom * 100)}%</span>
       </div>
@@ -422,7 +439,121 @@ export function Canvas({ roomId, socket }: { socket: WebSocket; roomId: string }
         </div>
       )}
 
+      <div className="absolute bottom-4 left-4 z-20 flex flex-col gap-2">
+        <ColorPicker
+          strokeColor={strokeColor}
+          fillColor={fillColor}
+          onStrokeColorChange={setStrokeColor}
+          onFillColorChange={setFillColor}
+          isDark={isDark}
+        />
+      </div>
+
       <div className={`fixed inset-0 pointer-events-none z-0 transition-colors duration-500 ${isDark ? "bg-[#1a1a2e]" : "bg-transparent"}`} />
+    </div>
+  );
+}
+
+const DEFAULT_COLORS = [
+  "#1e1e1e", "#ffffff", "#ff3b30", "#ff9500", "#ffcc00",
+  "#34c759", "#007aff", "#5856d6", "#af52de", "#ff2d55",
+  "#8e8e93", "#636366", "#000000",
+];
+
+function ColorPicker({
+  strokeColor,
+  fillColor,
+  onStrokeColorChange,
+  onFillColorChange,
+  isDark,
+}: {
+  strokeColor: string;
+  fillColor: string;
+  onStrokeColorChange: (c: string) => void;
+  onFillColorChange: (c: string) => void;
+  isDark: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"stroke" | "fill">("stroke");
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className={`flex h-10 w-10 items-center justify-center rounded-xl border transition-colors ${
+          isDark
+            ? "border-white/10 bg-gray-900/80 text-white"
+            : "border-[#eceaf4] bg-white/90 text-[#4c5160]"
+        } shadow-[0_12px_28px_-22px_rgba(16,24,40,0.45)] backdrop-blur`}
+        title="Colors"
+      >
+        <div
+          className="h-5 w-5 rounded-full border border-current"
+          style={{ backgroundColor: mode === "stroke" ? strokeColor : fillColor }}
+        />
+      </button>
+      {open && (
+        <div
+          className={`absolute bottom-12 left-0 z-50 min-w-[200px] rounded-2xl border p-3 shadow-lg ${
+            isDark
+              ? "border-white/10 bg-gray-900/95 text-white"
+              : "border-[#eceaf4] bg-white text-[#3b3f4d]"
+          }`}
+        >
+          <div className="mb-2 flex gap-2">
+            <button
+              onClick={() => setMode("stroke")}
+              className={`rounded-lg px-3 py-1 text-xs font-medium ${
+                mode === "stroke"
+                  ? "bg-blue-500 text-white"
+                  : isDark ? "bg-white/10" : "bg-gray-100"
+              }`}
+            >
+              Stroke
+            </button>
+            <button
+              onClick={() => setMode("fill")}
+              className={`rounded-lg px-3 py-1 text-xs font-medium ${
+                mode === "fill"
+                  ? "bg-blue-500 text-white"
+                  : isDark ? "bg-white/10" : "bg-gray-100"
+              }`}
+            >
+              Fill
+            </button>
+          </div>
+          <div className="grid grid-cols-7 gap-1.5">
+            {DEFAULT_COLORS.map((color) => (
+              <button
+                key={color}
+                onClick={() => {
+                  if (mode === "stroke") onStrokeColorChange(color);
+                  else onFillColorChange(color);
+                }}
+                className={`h-6 w-6 rounded-full border-2 transition-transform hover:scale-110 ${
+                  (mode === "stroke" ? strokeColor : fillColor) === color
+                    ? "border-blue-500"
+                    : "border-transparent"
+                }`}
+                style={{ backgroundColor: color }}
+                title={color}
+              />
+            ))}
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <span className="text-xs opacity-60">Custom:</span>
+            <input
+              type="color"
+              value={mode === "stroke" ? strokeColor : fillColor}
+              onChange={(e) => {
+                if (mode === "stroke") onStrokeColorChange(e.target.value);
+                else onFillColorChange(e.target.value);
+              }}
+              className="h-6 w-8 cursor-pointer rounded border-0 p-0"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
