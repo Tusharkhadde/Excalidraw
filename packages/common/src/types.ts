@@ -82,10 +82,26 @@ export const WsChatSchema = z.object({
     message: z.string(),
 });
 
+export const WsUpdateSchema = z.object({
+    type: z.literal("update"),
+    roomId: z.union([z.string(), z.number()]),
+    shape: z.object({
+        id: z.string(),
+    }).passthrough(),
+});
+
+export const WsSyncSchema = z.object({
+    type: z.literal("sync"),
+    roomId: z.union([z.string(), z.number()]),
+    shapes: z.array(z.object({}).passthrough()),
+});
+
 export const WsClientMessageSchema = z.discriminatedUnion("type", [
     WsJoinRoomSchema,
     WsLeaveRoomSchema,
     WsDrawSchema,
+    WsUpdateSchema,
+    WsSyncSchema,
     WsChatSchema,
 ]);
 
