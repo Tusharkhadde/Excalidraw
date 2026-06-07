@@ -97,6 +97,73 @@ wss.on("connection", (ws, request) => {
             return;
         }
 
+        if (type === "update") {
+            const roomId = String(parsed.roomId ?? "");
+            const shape = parsed.shape as Record<string, unknown> | null;
+            const shapeId = typeof shape === "object" && shape ? String(shape.id ?? "") : "";
+            if (!roomId || !shapeId) {
+                ws.send(JSON.stringify({ type: "error", message: "Invalid update payload" }));
+                return;
+            }
+
+            // Delete old record then insert updated shape
+            try {
+                await prismaClient.chat.deleteMany({
+                    where: { roomId: Number(roomId), message: { contains: shapeId } },
+                });
+                await prismaClient.chat.create({
+                    data: {
+                        roomId: Number(roomId),
+                        message: JSON.stringify({ shape }),
+                        userId: client.userId,
+                    },
+                });
+            } catch {
+                // best-effort persist
+            }
+
+            broadcastToRoom(roomId, { type: "update", roomId, shape, userId: client.userId });
+            return;
+        }
+
+        if (type === "sync") {
+            const roomId = String(parsed.roomId ?? "");
+            const shapes = parsed.shapes;
+            if (!roomId || !Array.isArray(shapes)) {
+                ws.send(JSON.stringify({ type: "error", message: "Invalid sync payload" }));
+                return;
+            }
+            try {
+                await prismaClient.chat.deleteMany({ where: { roomId: Number(roomId) } });
+                for (const shape of shapes) {
+                    await prismaClient.chat.create({
+                        data: { roomId: Number(roomId), message: JSON.stringify({ shape }), userId: client.userId },
+                    });
+                }
+            } catch {
+                // best-effort persist
+            }
+            broadcastToRoom(roomId, { type: "sync", roomId, shapes, userId: client.userId });
+            return;
+        }
+
+        if (type === "clear") {
+            const roomId = String(parsed.roomId ?? "");
+            if (!roomId) {
+                ws.send(JSON.stringify({ type: "error", message: "roomId is required for clear" }));
+                return;
+            }
+            try {
+                await prismaClient.chat.deleteMany({
+                    where: { roomId: Number(roomId) },
+                });
+            } catch {
+                // best-effort
+            }
+            broadcastToRoom(roomId, { type: "clear", roomId });
+            return;
+        }
+
         if (type === "chat") {
             const roomId = String(parsed.roomId ?? "");
             const message = String(parsed.message ?? "");
