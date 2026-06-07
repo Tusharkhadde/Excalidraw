@@ -607,7 +607,7 @@ export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorC
             x={shape.x}
             y={shape.y}
             fontSize={shape.fontSize}
-            fontFamily="Virgil, Segoe UI Emoji, sans-serif"
+            fontFamily="Caveat, Virgil, Segoe UI Emoji, sans-serif"
             fill={selectionColor}
             strokeDasharray={dashArray}
             style={{ pointerEvents: isDraft ? "none" : "auto", userSelect: "none" }}
@@ -744,7 +744,7 @@ export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorC
           style={{
             left: textInputPos.x + panOffset.x,
             top: textInputPos.y + panOffset.y - 22,
-            fontFamily: "Virgil, Segoe UI Emoji, sans-serif",
+            fontFamily: "Caveat, Virgil, Segoe UI Emoji, sans-serif",
             color: STROKE_COLOR,
           }}
         />
