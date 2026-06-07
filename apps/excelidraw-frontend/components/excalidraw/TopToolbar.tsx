@@ -2,37 +2,35 @@
 
 import { useState } from "react";
 import {
-  Lock,
-  Hand,
-  MousePointer2,
-  RectangleHorizontal,
-  Diamond,
-  Circle,
   ArrowRight,
-  Minus,
-  Pencil,
-  Type,
-  Image,
+  Circle,
+  Diamond,
   Eraser,
-  MoreHorizontal,
+  Hand,
+  Image as ImageIcon,
+  Lock,
+  Minus,
+  MousePointer2,
+  Pencil,
+  RectangleHorizontal,
+  Type,
 } from "lucide-react";
 import { ToolButton } from "./ToolButton";
 import type { ToolConfig } from "./types";
 
-const tools: ToolConfig[] = [
-  { id: "lock", icon: Lock, label: "Lock" },
+const baseTools: ToolConfig[] = [
+  { id: "lock", icon: Lock, label: "Lock", shortcut: "Q" },
   { id: "hand", icon: Hand, label: "Hand", shortcut: "H" },
-  { id: "selection", icon: MousePointer2, label: "Selection", shortcut: "1" },
-  { id: "rectangle", icon: RectangleHorizontal, label: "Rectangle", shortcut: "2" },
-  { id: "diamond", icon: Diamond, label: "Diamond", shortcut: "3" },
-  { id: "ellipse", icon: Circle, label: "Ellipse", shortcut: "4" },
-  { id: "arrow", icon: ArrowRight, label: "Arrow", shortcut: "5" },
-  { id: "line", icon: Minus, label: "Line", shortcut: "6" },
-  { id: "pencil", icon: Pencil, label: "Pencil", shortcut: "7" },
-  { id: "text", icon: Type, label: "Text", shortcut: "8" },
-  { id: "image", icon: Image, label: "Image" },
-  { id: "eraser", icon: Eraser, label: "Eraser" },
-  { id: "more", icon: MoreHorizontal, label: "More" },
+  { id: "selection", icon: MousePointer2, label: "Select", shortcut: "V" },
+  { id: "rectangle", icon: RectangleHorizontal, label: "Rectangle", shortcut: "R" },
+  { id: "diamond", icon: Diamond, label: "Diamond", shortcut: "D" },
+  { id: "circle", icon: Circle, label: "Circle", shortcut: "O" },
+  { id: "arrow", icon: ArrowRight, label: "Arrow", shortcut: "A" },
+  { id: "line", icon: Minus, label: "Line", shortcut: "L" },
+  { id: "pencil", icon: Pencil, label: "Pencil", shortcut: "P" },
+  { id: "text", icon: Type, label: "Text", shortcut: "T" },
+  { id: "image", icon: ImageIcon, label: "Image", shortcut: "I" },
+  { id: "eraser", icon: Eraser, label: "Eraser", shortcut: "E" },
 ];
 
 interface TopToolbarProps {
@@ -51,17 +49,24 @@ export function TopToolbar({ activeTool = "selection", onToolChange }: TopToolba
   const currentActive = onToolChange ? activeTool : internalActive;
 
   return (
-    <div className="inline-flex items-center gap-0.5 rounded-[10px] border border-gray-200 bg-white px-2 py-1.5 shadow-[0_1px_3px_0_rgba(0,0,0,0.06),0_1px_2px_-1px_rgba(0,0,0,0.06)]">
-      {tools.map((tool, i) => (
-        <ToolButton
-          key={tool.id}
-          icon={tool.icon}
-          label={tool.label}
-          shortcut={tool.shortcut}
-          active={currentActive === tool.id}
-          onClick={() => handleClick(tool.id)}
-        />
-      ))}
+    <div className="inline-flex items-center rounded-[18px] border border-[#e8e6f2] bg-white/95 px-2 py-1.5 shadow-[0_12px_28px_-22px_rgba(16,24,40,0.5),0_1px_0_rgba(255,255,255,0.8)_inset] backdrop-blur">
+      {baseTools.map((tool, index) => {
+        const showDivider = index === 1 || index === 10;
+
+        return (
+          <div key={tool.id} className="flex items-center">
+            {showDivider && <div className="mx-1 h-10 w-px bg-[#eceaf4]" />}
+            <ToolButton
+              icon={tool.icon}
+              label={tool.label}
+              shortcut={tool.shortcut}
+              order={String((index + 1) % 10)}
+              active={currentActive === tool.id}
+              onClick={() => handleClick(tool.id)}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }

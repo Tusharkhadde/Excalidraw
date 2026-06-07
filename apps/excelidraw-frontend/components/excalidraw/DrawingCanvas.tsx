@@ -96,7 +96,14 @@ function hitTestShape(shape: Shape, px: number, py: number): boolean {
       return pointNearLine(px, py, shape.x, shape.y, x2, y2, ERASER_HIT_PADDING);
     }
     case "pencil":
-      return pointNearLine(px, py, shape.startX, shape.startY, shape.endX, shape.endY, ERASER_HIT_PADDING);
+      if (shape.points && shape.points.length > 1) {
+        for (let i = 1; i < shape.points.length; i++) {
+          if (pointNearLine(px, py, shape.points[i - 1].x, shape.points[i - 1].y, shape.points[i].x, shape.points[i].y, ERASER_HIT_PADDING)) {
+            return true;
+          }
+        }
+      }
+      return false;
     case "text": {
       const w = (shape.text?.length || 0) * shape.fontSize * 0.6;
       const h = shape.fontSize * 1.2;
@@ -107,37 +114,12 @@ function hitTestShape(shape: Shape, px: number, py: number): boolean {
   }
 }
 
-function getShapeBounds(shape: Shape) {
-  if (shape.type === "rect" || shape.type === "diamond" || shape.type === "ellipse" || shape.type === "arrow" || shape.type === "line" || shape.type === "image") {
-    return {
-      x: Math.min(shape.x, shape.x + shape.width),
-      y: Math.min(shape.y, shape.y + shape.height),
-      width: Math.abs(shape.width),
-      height: Math.abs(shape.height),
-    };
-  }
-  if (shape.type === "pencil") {
-    const minX = Math.min(shape.startX, shape.endX);
-    const minY = Math.min(shape.startY, shape.endY);
-    const maxX = Math.max(shape.startX, shape.endX);
-    const maxY = Math.max(shape.startY, shape.endY);
-    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-  }
-  if (shape.type === "circle") {
-    return { x: shape.centerX - shape.radius, y: shape.centerY - shape.radius, width: shape.radius * 2, height: shape.radius * 2 };
-  }
-  // text
-  const w = (shape.text?.length || 0) * shape.fontSize * 0.6;
-  const h = shape.fontSize * 1.2;
-  return { x: shape.x, y: shape.y - shape.fontSize, width: w, height: h };
-}
-
 function getShapeStartPoint(shape: Shape): { x: number; y: number } {
   if (shape.type === "circle") {
     return { x: shape.centerX, y: shape.centerY };
   }
   if (shape.type === "pencil") {
-    return { x: shape.startX, y: shape.startY };
+    return { x: shape.points?.[0]?.x ?? 0, y: shape.points?.[0]?.y ?? 0 };
   }
   if (shape.type === "text" || shape.type === "image" || shape.type === "rect" || shape.type === "diamond" || shape.type === "ellipse" || shape.type === "line" || shape.type === "arrow") {
     return { x: shape.x, y: shape.y };
@@ -175,7 +157,7 @@ export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorC
     [panOffset]
   );
 
-  const isShapeTool = ["rectangle", "diamond", "ellipse", "arrow", "line", "pencil"].includes(activeTool);
+  const isShapeTool = ["rectangle", "diamond", "circle", "ellipse", "arrow", "line", "pencil"].includes(activeTool);
   const isTextTool = activeTool === "text";
   const isImageTool = activeTool === "image";
   const isSelectionTool = activeTool === "selection";
@@ -224,13 +206,17 @@ export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorC
     }
 
     if (isShapeTool) {
-      setDraft({
+      const draftShape: DraftShape = {
         type: activeTool === "rectangle" ? "rect" : (activeTool as Shape["type"]),
         startX: point.x,
         startY: point.y,
         currentX: point.x,
         currentY: point.y,
-      });
+      };
+      if (activeTool === "pencil") {
+        draftShape.pencilPoints = [{ x: point.x, y: point.y }];
+      }
+      setDraft(draftShape);
       return;
     }
 
@@ -289,6 +275,9 @@ export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorC
               ...prev,
               currentX: point.x,
               currentY: point.y,
+              pencilPoints: prev.type === "pencil" && prev.pencilPoints
+                ? [...prev.pencilPoints, { x: point.x, y: point.y }]
+                : prev.pencilPoints,
             }
           : prev
       );
@@ -306,9 +295,8 @@ export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorC
             return { ...s, centerX: dragRef.current!.shapeStartX + dx, centerY: dragRef.current!.shapeStartY + dy };
           }
           if (s.type === "pencil") {
-            const ddx = dragRef.current!.shapeStartX - s.startX;
-            const ddy = dragRef.current!.shapeStartY - s.startY;
-            return { ...s, startX: dragRef.current!.shapeStartX + dx - ddx, startY: dragRef.current!.shapeStartY + dy - ddy, endX: s.endX + dx, endY: s.endY + dy };
+            const newPoints = s.points?.map(p => ({ x: p.x + dx, y: p.y + dy })) || [];
+            return { ...s, points: newPoints };
           }
           return { ...s, x: dragRef.current!.shapeStartX + dx, y: dragRef.current!.shapeStartY + dy };
         })
@@ -352,6 +340,22 @@ export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorC
           case "diamond":
             newShape = { ...baseProps, type: "diamond" };
             break;
+          case "circle": {
+            const cx = x + width / 2;
+            const cy = y + height / 2;
+            const radius = Math.max(width, height) / 2;
+            newShape = {
+              id,
+              type: "circle",
+              centerX: cx,
+              centerY: cy,
+              radius,
+              strokeColor: STROKE_COLOR,
+              strokeWidth: STROKE_WIDTH,
+              fillColor: FILL_COLOR,
+            };
+            break;
+          }
           case "ellipse":
             newShape = { ...baseProps, type: "ellipse" };
             break;
@@ -365,10 +369,7 @@ export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorC
             newShape = {
               id,
               type: "pencil",
-              startX: draft.startX,
-              startY: draft.startY,
-              endX: draft.currentX,
-              endY: draft.currentY,
+              points: draft.pencilPoints || [],
               strokeColor: STROKE_COLOR,
               strokeWidth: STROKE_WIDTH,
             };
@@ -582,16 +583,18 @@ export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorC
         );
       }
       case "pencil": {
+        const points = shape.points || [];
+        if (points.length < 2) return null;
+        const pathData = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x} ${p.y}`).join(" ");
         return (
-          <line
+          <path
             key={shape.id}
-            x1={shape.startX}
-            y1={shape.startY}
-            x2={shape.endX}
-            y2={shape.endY}
+            d={pathData}
             stroke={selectionColor}
             strokeWidth={sw}
+            fill="none"
             strokeLinecap="round"
+            strokeLinejoin="round"
             strokeDasharray={dashArray}
             style={{ pointerEvents: isDraft ? "none" : "auto" }}
           />
@@ -659,6 +662,12 @@ export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorC
         const cy = y + height / 2;
         return <polygon points={`${cx},${y} ${x + width},${cy} ${cx},${y + height} ${x},${cy}`} stroke={stroke} strokeWidth={sw} fill={fill} pointerEvents="none" />;
       }
+      case "circle": {
+        const cx = x + width / 2;
+        const cy = y + height / 2;
+        const radius = Math.max(width, height) / 2;
+        return <circle cx={cx} cy={cy} r={radius} stroke={stroke} strokeWidth={sw} fill={fill} pointerEvents="none" />;
+      }
       case "ellipse":
         return <ellipse cx={x + width / 2} cy={y + height / 2} rx={width / 2} ry={height / 2} stroke={stroke} strokeWidth={sw} fill={fill} pointerEvents="none" />;
       case "line":
@@ -680,8 +689,12 @@ export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorC
           </g>
         );
       }
-      case "pencil":
-        return <line x1={draft.startX} y1={draft.startY} x2={draft.currentX} y2={draft.currentY} stroke={stroke} strokeWidth={sw} strokeLinecap="round" pointerEvents="none" />;
+      case "pencil": {
+        const points = draft.pencilPoints || [];
+        if (points.length < 2) return null;
+        const pathData = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x} ${p.y}`).join(" ");
+        return <path d={pathData} stroke={stroke} strokeWidth={sw} fill="none" strokeLinecap="round" strokeLinejoin="round" pointerEvents="none" />;
+      }
       default:
         return null;
     }
