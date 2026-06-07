@@ -5,10 +5,22 @@ import type { Shape } from "@repo/common/types";
 const STROKE_COLOR = "#1e1e1e";
 const STROKE_WIDTH = 2;
 const FONT_SIZE = 20;
-const CANVAS_BG = "#ffffff";
-
 function makeId() {
     return `shape_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function isValidPoint(value: unknown): value is { x: number; y: number } {
+    if (!value || typeof value !== "object") return false;
+    const point = value as { x?: unknown; y?: unknown };
+    return typeof point.x === "number" && typeof point.y === "number";
+}
+
+function getSafePencilPoints(shape: Shape): { x: number; y: number }[] {
+    if (shape.type !== "pencil" || !Array.isArray(shape.points)) {
+        return [];
+    }
+
+    return shape.points.filter(isValidPoint);
 }
 
 export class Game {
@@ -19,10 +31,13 @@ export class Game {
     private clicked = false;
     private startX = 0;
     private startY = 0;
-    private selectedTool: Tool = "pencil";
+    private selectedTool: Tool = "selection";
     private socket: WebSocket;
     private pencilPath: { x: number; y: number }[] = [];
     private panOffset = { x: 0, y: 0 };
+    private zoom = 1;
+    private minZoom = 0.1;
+    private maxZoom = 5;
     private isPanning = false;
     private panStart = { x: 0, y: 0, offsetX: 0, offsetY: 0 };
     private selectedShapeId: string | null = null;
@@ -30,6 +45,7 @@ export class Game {
     private isSpaceDown = false;
     private onTextClick: ((x: number, y: number) => void) | null = null;
     private onImageClick: (() => void) | null = null;
+    private onZoomChange: ((zoom: number) => void) | null = null;
 
     private boundMouseDown: (e: MouseEvent) => void;
     private boundMouseUp: (e: MouseEvent) => void;
@@ -46,7 +62,7 @@ export class Game {
         this.existingShapes = [];
         this.roomId = roomId;
         this.socket = socket;
-        this.selectedTool = "pencil";
+        this.selectedTool = "selection";
 
         this.boundMouseDown = this.handleMouseDown.bind(this);
         this.boundMouseUp = this.handleMouseUp.bind(this);
@@ -86,6 +102,34 @@ export class Game {
         this.onImageClick = handler;
     }
 
+    setZoomChangeHandler(handler: ((zoom: number) => void) | null) {
+        this.onZoomChange = handler;
+    }
+
+    setZoom(zoom: number) {
+        const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, zoom));
+        if (newZoom !== this.zoom) {
+            this.zoom = newZoom;
+            this.onZoomChange?.(this.zoom);
+            this.render();
+        }
+    }
+
+    getZoom(): number {
+        return this.zoom;
+    }
+
+    resetZoom() {
+        this.setZoom(1);
+    }
+
+    setCanvasBg(color: string) {
+        this.canvasBg = color;
+        this.render();
+    }
+
+    private canvasBg: string = "#ffffff";
+
     addShape(shape: Shape) {
         this.existingShapes.push(shape);
         this.render();
@@ -122,13 +166,15 @@ export class Game {
 
     private updateCursor() {
         const map: Record<string, string> = {
-            hand: this.isPanning ? "grabbing" : "grab",
+            hand: "grab",
             rectangle: "crosshair",
+            circle: "crosshair",
             diamond: "crosshair",
             ellipse: "crosshair",
             arrow: "crosshair",
             line: "crosshair",
             pencil: "crosshair",
+            selection: "default",
             text: "text",
             image: "copy",
             eraser: "cell",
@@ -156,11 +202,12 @@ export class Game {
 
     private render() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = CANVAS_BG;
+        this.ctx.fillStyle = this.canvasBg;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         this.ctx.save();
         this.ctx.translate(this.panOffset.x, this.panOffset.y);
+        this.ctx.scale(this.zoom, this.zoom);
 
         for (const shape of this.existingShapes) {
             this.drawShape(shape);
@@ -208,7 +255,7 @@ export class Game {
                 break;
             }
             case "pencil": {
-                this.drawPencil(shape.startX, shape.startY, shape.endX, shape.endY, isSelected);
+                this.drawPencil(getSafePencilPoints(shape), isSelected);
                 break;
             }
             case "text": {
@@ -280,12 +327,24 @@ export class Game {
         if (isSelected) this.drawSelectionRing((x + x2) / 2, (y + y2) / 2, Math.hypot(w, h) / 2);
     }
 
-    private drawPencil(sx: number, sy: number, ex: number, ey: number, isSelected: boolean) {
+    private drawPencil(points: { x: number; y: number }[] | undefined, isSelected: boolean) {
+        if (!Array.isArray(points)) return;
+        if (points.length < 2) return;
         this.ctx.beginPath();
-        this.ctx.moveTo(sx, sy);
-        this.ctx.lineTo(ex, ey);
+        this.ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+            this.ctx.lineTo(points[i].x, points[i].y);
+        }
         this.ctx.stroke();
-        if (isSelected) this.drawSelectionRing((sx + ex) / 2, (sy + ey) / 2, Math.hypot(ex - sx, ey - sy) / 2);
+        if (isSelected) {
+            const xs = points.map(p => p.x);
+            const ys = points.map(p => p.y);
+            const minX = Math.min(...xs);
+            const maxX = Math.max(...xs);
+            const minY = Math.min(...ys);
+            const maxY = Math.max(...ys);
+            this.drawSelectionRing((minX + maxX) / 2, (minY + maxY) / 2, Math.max(maxX - minX, maxY - minY) / 2);
+        }
     }
 
     private drawText(x: number, y: number, text: string, fontSize: number, isSelected: boolean) {
@@ -334,8 +393,8 @@ export class Game {
     private getMousePos(e: MouseEvent) {
         const rect = this.canvas.getBoundingClientRect();
         return {
-            x: e.clientX - rect.left - this.panOffset.x,
-            y: e.clientY - rect.top - this.panOffset.y,
+            x: (e.clientX - rect.left - this.panOffset.x) / this.zoom,
+            y: (e.clientY - rect.top - this.panOffset.y) / this.zoom,
         };
     }
 
@@ -373,7 +432,17 @@ export class Game {
             case "arrow":
                 return pointNearLine(px, py, shape.x, shape.y, shape.x + shape.width, shape.y + shape.height, pad);
             case "pencil":
-                return pointNearLine(px, py, shape.startX, shape.startY, shape.endX, shape.endY, pad);
+                {
+                    const points = getSafePencilPoints(shape);
+                    if (points.length > 1) {
+                        for (let i = 1; i < points.length; i++) {
+                            if (pointNearLine(px, py, points[i - 1].x, points[i - 1].y, points[i].x, points[i].y, pad)) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                }
             case "text": {
                 const w = (shape.text?.length || 0) * shape.fontSize * 0.6;
                 const h = shape.fontSize * 1.2;
@@ -389,7 +458,8 @@ export class Game {
             return { x: shape.centerX, y: shape.centerY };
         }
         if (shape.type === "pencil") {
-            return { x: shape.startX, y: shape.startY };
+            const points = getSafePencilPoints(shape);
+            return { x: points[0]?.x ?? 0, y: points[0]?.y ?? 0 };
         }
         if (shape.type === "text" || shape.type === "image" || shape.type === "rect" || shape.type === "diamond" || shape.type === "ellipse" || shape.type === "line" || shape.type === "arrow") {
             return { x: shape.x, y: shape.y };
@@ -413,8 +483,6 @@ export class Game {
             this.updateCursor();
             return;
         }
-
-        if (this.selectedTool === "lock" || this.selectedTool === "more") return;
 
         if (this.selectedTool === "selection") {
             const hit = [...this.existingShapes].reverse().find((s) => this.hitTest(s, pos.x, pos.y));
@@ -448,9 +516,7 @@ export class Game {
         }
 
         if (this.selectedTool === "image") {
-            if (this.onImageClick) {
-                this.onImageClick();
-            }
+            this.onImageClick?.();
             return;
         }
 
@@ -504,7 +570,7 @@ export class Game {
             case "diamond":
                 this.drawDiamond(this.startX, this.startY, width, height, false);
                 break;
-            case "ellipse":
+            case "circle":
                 this.drawEllipse(this.startX, this.startY, width, height, false);
                 break;
             case "arrow":
@@ -578,15 +644,17 @@ export class Game {
                     };
                 }
                 break;
-            case "ellipse":
+            case "circle":
                 if (Math.abs(width) > 3 || Math.abs(height) > 3) {
+                    const cx = this.startX + width / 2;
+                    const cy = this.startY + height / 2;
+                    const radius = Math.max(Math.abs(width), Math.abs(height)) / 2;
                     shape = {
-                        type: "ellipse",
+                        type: "circle",
                         id,
-                        x: this.startX,
-                        y: this.startY,
-                        width,
-                        height,
+                        centerX: cx,
+                        centerY: cy,
+                        radius,
                         strokeColor: STROKE_COLOR,
                         strokeWidth: STROKE_WIDTH,
                     };
@@ -622,15 +690,10 @@ export class Game {
                 break;
             case "pencil":
                 if (this.pencilPath.length > 1) {
-                    const first = this.pencilPath[0];
-                    const last = this.pencilPath[this.pencilPath.length - 1];
                     shape = {
                         type: "pencil",
                         id,
-                        startX: first.x,
-                        startY: first.y,
-                        endX: last.x,
-                        endY: last.y,
+                        points: [...this.pencilPath],
                         strokeColor: STROKE_COLOR,
                         strokeWidth: STROKE_WIDTH,
                     };
@@ -657,12 +720,11 @@ export class Game {
             shape.centerX = newX;
             shape.centerY = newY;
         } else if (shape.type === "pencil") {
-            const dx = newX - shape.startX;
-            const dy = newY - shape.startY;
-            shape.startX += dx;
-            shape.startY += dy;
-            shape.endX += dx;
-            shape.endY += dy;
+            const points = getSafePencilPoints(shape);
+            if (points.length === 0) return;
+            const dx = newX - points[0].x;
+            const dy = newY - points[0].y;
+            shape.points = points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
         } else if (shape.type === "text" || shape.type === "image") {
             shape.x = newX;
             shape.y = newY;
@@ -670,8 +732,29 @@ export class Game {
     }
 
     private handleWheel(e: WheelEvent) {
-        if (!e.ctrlKey) return;
-        e.preventDefault();
+        if (e.ctrlKey) {
+            e.preventDefault();
+            const rect = this.canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoom * zoomFactor));
+            if (newZoom !== this.zoom) {
+                const zoomRatio = newZoom / this.zoom;
+                this.panOffset.x = mouseX - (mouseX - this.panOffset.x) * zoomRatio;
+                this.panOffset.y = mouseY - (mouseY - this.panOffset.y) * zoomRatio;
+                this.zoom = newZoom;
+                this.onZoomChange?.(this.zoom);
+                this.render();
+            }
+            return;
+        }
+        if (e.shiftKey) {
+            e.preventDefault();
+            this.panOffset.x -= e.deltaY;
+            this.render();
+            return;
+        }
     }
 
     private handleKeyDown(e: KeyboardEvent) {
@@ -681,6 +764,18 @@ export class Game {
             e.preventDefault();
             this.isSpaceDown = true;
             this.updateCursor();
+        }
+        if ((e.ctrlKey || e.metaKey) && (e.key === "=" || e.key === "+")) {
+            e.preventDefault();
+            this.setZoom(this.zoom * 1.2);
+        }
+        if ((e.ctrlKey || e.metaKey) && (e.key === "-" || e.key === "_")) {
+            e.preventDefault();
+            this.setZoom(this.zoom / 1.2);
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === "0") {
+            e.preventDefault();
+            this.setZoom(1);
         }
         if ((e.key === "Delete" || e.key === "Backspace") && this.selectedShapeId) {
             e.preventDefault();
