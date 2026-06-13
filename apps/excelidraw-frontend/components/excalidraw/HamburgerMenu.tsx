@@ -23,9 +23,13 @@ import {
   Sun,
   UserPlus,
   Users,
+  Palette,
+  Droplet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type MenuItem } from "./types";
+import { ColorPicker, ColorPickerSelection, ColorPickerHue, ColorPickerAlpha, ColorPickerEyeDropper, ColorPickerOutput, ColorPickerFormat } from "@repo/ui/color-picker";
+import { Popover, PopoverContent, PopoverTrigger } from "@repo/ui/popover";
 
 const menuGroups: MenuItem[][] = [
   [
@@ -53,12 +57,20 @@ interface HamburgerMenuProps {
   onItemClick?: (itemId: string) => void;
   theme?: "light" | "dark";
   onThemeToggle?: () => void;
+  strokeColor?: string;
+  fillColor?: string;
+  onStrokeColorChange?: (color: string) => void;
+  onFillColorChange?: (color: string) => void;
 }
 
 export function HamburgerMenu({
   onItemClick,
   theme = "light",
   onThemeToggle,
+  strokeColor = "#1e1e1e",
+  fillColor = "transparent",
+  onStrokeColorChange,
+  onFillColorChange,
 }: HamburgerMenuProps) {
   const [open, setOpen] = useState(true);
   const [language, setLanguage] = useState("English");
@@ -187,6 +199,73 @@ export function HamburgerMenu({
               <button className="flex h-8 w-8 items-center justify-center rounded-xl text-[#6d63da] transition-colors">
                 <Globe className="h-4 w-4" strokeWidth={1.7} />
               </button>
+            </div>
+
+            <div className="mx-6 mt-2 mb-1 text-[15px] text-[#202433]">Colors</div>
+
+            <div className="mx-6 mb-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <Palette className="h-4 w-4 text-[#2d3140]" strokeWidth={1.6} />
+                <span className="flex-1 text-sm text-[#202433]">Stroke</span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      className="h-8 w-8 rounded-lg border border-[#eceaf4] transition-colors hover:border-[#6d63da]"
+                      style={{ backgroundColor: strokeColor }}
+                      aria-label="Stroke color"
+                    />
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[280px] p-3 border-[#eceaf4] bg-white" align="end">
+                    <ColorPicker value={strokeColor} onChange={([r, g, b]) => onStrokeColorChange?.(`#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`)}>
+                      <ColorPickerSelection className="h-40 rounded-lg" />
+                      <ColorPickerHue />
+                      <ColorPickerAlpha />
+                      <div className="flex items-center gap-2">
+                        <ColorPickerEyeDropper />
+                        <ColorPickerOutput />
+                        <ColorPickerFormat />
+                      </div>
+                    </ColorPicker>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="flex items-center gap-3">
+                <Droplet className="h-4 w-4 text-[#2d3140]" strokeWidth={1.6} />
+                <span className="flex-1 text-sm text-[#202433]">Fill</span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      className="h-8 w-8 rounded-lg border border-[#eceaf4] transition-colors hover:border-[#6d63da]"
+                      style={{ backgroundColor: fillColor === "transparent" ? "transparent" : fillColor }}
+                      aria-label="Fill color"
+                    >
+                      {fillColor === "transparent" && (
+                        <svg className="h-full w-full" viewBox="0 0 24 24">
+                          <rect width="24" height="24" fill="url(#checkerboard)" />
+                          <defs>
+                            <pattern id="checkerboard" patternUnits="userSpaceOnUse" width="8" height="8">
+                              <rect width="4" height="4" fill="#ccc" />
+                              <rect x="4" y="4" width="4" height="4" fill="#ccc" />
+                            </pattern>
+                          </defs>
+                        </svg>
+                      )}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[280px] p-3 border-[#eceaf4] bg-white" align="end">
+                    <ColorPicker value={fillColor} onChange={([r, g, b]) => onFillColorChange?.(`#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`)}>
+                      <ColorPickerSelection className="h-40 rounded-lg" />
+                      <ColorPickerHue />
+                      <ColorPickerAlpha />
+                      <div className="flex items-center gap-2">
+                        <ColorPickerEyeDropper />
+                        <ColorPickerOutput />
+                        <ColorPickerFormat />
+                      </div>
+                    </ColorPicker>
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
 
             <div className="relative px-6 pb-2">
