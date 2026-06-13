@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, type PointerEvent as ReactPointerEvent, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { ColorPickerWrapper } from "./ColorPickerWrapper";
 import type { Shape } from "./types";
 
 interface DrawingCanvasProps {
@@ -10,6 +11,7 @@ interface DrawingCanvasProps {
   shapes: Shape[];
   setShapes: React.Dispatch<React.SetStateAction<Shape[]>>;
   onCursorChange?: (cursor: string) => void;
+  isDark?: boolean;
 }
 
 interface PanOffset {
@@ -127,7 +129,7 @@ function getShapeStartPoint(shape: Shape): { x: number; y: number } {
   return { x: 0, y: 0 };
 }
 
-export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorChange }: DrawingCanvasProps) {
+export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorChange, isDark }: DrawingCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [panOffset, setPanOffset] = useState<PanOffset>({ x: 0, y: 0 });
@@ -137,6 +139,10 @@ export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorC
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [textInputValue, setTextInputValue] = useState("");
   const [textInputPos, setTextInputPos] = useState({ x: 0, y: 0 });
+  const [textInputActive, setTextInputActive] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [strokeColor, setStrokeColor] = useState("#1e1e1e");
+  const [fillColor, setFillColor] = useState("transparent");
   const dragRef = useRef<{
     shapeId: string;
     startX: number;
@@ -223,6 +229,7 @@ export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorC
     if (isTextTool) {
       setTextInputPos({ x: point.x, y: point.y });
       setTextInputValue("");
+      setTextInputActive(true);
       return;
     }
 
@@ -328,9 +335,9 @@ export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorC
           y,
           width,
           height,
-          strokeColor: STROKE_COLOR,
+          strokeColor,
           strokeWidth: STROKE_WIDTH,
-          fillColor: FILL_COLOR,
+          fillColor,
         };
         let newShape: Shape;
         switch (activeTool) {
@@ -350,9 +357,9 @@ export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorC
               centerX: cx,
               centerY: cy,
               radius,
-              strokeColor: STROKE_COLOR,
+              strokeColor,
               strokeWidth: STROKE_WIDTH,
-              fillColor: FILL_COLOR,
+              fillColor,
             };
             break;
           }
@@ -370,7 +377,7 @@ export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorC
               id,
               type: "pencil",
               points: draft.pencilPoints || [],
-              strokeColor: STROKE_COLOR,
+              strokeColor,
               strokeWidth: STROKE_WIDTH,
             };
             break;
@@ -396,19 +403,21 @@ export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorC
         y: textInputPos.y,
         text: textInputValue,
         fontSize: FONT_SIZE,
-        strokeColor: STROKE_COLOR,
+        strokeColor,
         strokeWidth: 0,
         fillColor: "transparent",
       };
       setShapes((prev) => [...prev, newShape]);
     }
     setTextInputValue("");
+    setTextInputActive(false);
   };
 
   const handleTextKeyDown = (e: ReactKeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Escape") {
       e.preventDefault();
       setTextInputValue("");
+      setTextInputActive(false);
     }
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -448,6 +457,18 @@ export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorC
     reader.readAsDataURL(file);
     e.target.value = "";
   };
+
+  useEffect(() => {
+    if (textInputActive && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [textInputActive]);
+
+  useEffect(() => {
+    if (!isTextTool) {
+      setTextInputActive(false);
+    }
+  }, [isTextTool]);
 
   useEffect(() => {
     if (isImageTool && fileInputRef.current) {
@@ -650,9 +671,9 @@ export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorC
     const y = Math.min(draft.startY, draft.currentY);
     const width = Math.abs(draft.currentX - draft.startX);
     const height = Math.abs(draft.currentY - draft.startY);
-    const stroke = STROKE_COLOR;
+    const stroke = strokeColor;
     const sw = STROKE_WIDTH;
-    const fill = FILL_COLOR;
+    const fill = fillColor;
 
     switch (activeTool) {
       case "rectangle":
@@ -732,8 +753,9 @@ export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorC
         {renderDraft()}
       </svg>
 
-      {isTextTool && (
+      {textInputActive && (
         <textarea
+          ref={textareaRef}
           autoFocus
           value={textInputValue}
           onChange={(e) => setTextInputValue(e.target.value)}
@@ -745,7 +767,7 @@ export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorC
             left: textInputPos.x + panOffset.x,
             top: textInputPos.y + panOffset.y - 22,
             fontFamily: "Caveat, Virgil, Segoe UI Emoji, sans-serif",
-            color: STROKE_COLOR,
+            color: strokeColor,
           }}
         />
       )}
@@ -757,6 +779,16 @@ export function DrawingCanvas({ activeTool, locked, shapes, setShapes, onCursorC
         className="hidden"
         onChange={handleImageUpload}
       />
+
+      <div className="absolute bottom-4 left-4 z-20">
+        <ColorPickerWrapper
+          strokeColor={strokeColor}
+          fillColor={fillColor}
+          onStrokeColorChange={setStrokeColor}
+          onFillColorChange={setFillColor}
+          isDark={isDark}
+        />
+      </div>
     </div>
   );
 }
