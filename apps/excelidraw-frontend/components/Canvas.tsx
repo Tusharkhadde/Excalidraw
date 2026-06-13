@@ -6,6 +6,16 @@ import { Game, preloadImage } from "@/draw/Game";
 import { HamburgerMenu } from "./excalidraw/HamburgerMenu";
 import { TopRightActions } from "./excalidraw/TopRightActions";
 import { TopToolbar } from "./excalidraw/TopToolbar";
+import {
+  ColorPicker,
+  ColorPickerSelection,
+  ColorPickerHue,
+  ColorPickerAlpha,
+  ColorPickerEyeDropper,
+  ColorPickerOutput,
+  ColorPickerFormat,
+} from "@repo/ui/color-picker";
+import { Popover, PopoverContent, PopoverTrigger } from "@repo/ui/popover";
 import type { Shape } from "@repo/common/types";
 
 export type Tool =
@@ -41,6 +51,7 @@ export function Canvas({ roomId, socket }: { socket: WebSocket; roomId: string }
   const [dotsEnabled, setDotsEnabled] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [strokeColor, setStrokeColor] = useState("#1e1e1e");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [fillColor, setFillColor] = useState("transparent");
 
   const themeMode = isDark ? "dark" : "light";
@@ -150,7 +161,7 @@ export function Canvas({ roomId, socket }: { socket: WebSocket; roomId: string }
       clearInterval(syncInterval);
       nextGame.destroy();
     };
-  }, [roomId, socket, dimensions.width]);
+  }, [roomId, socket, dimensions.width, fillColor, strokeColor]);
 
   const handleToolChange = (toolId: string) => {
     if (locked && toolId !== "lock") return;
@@ -296,11 +307,46 @@ export function Canvas({ roomId, socket }: { socket: WebSocket; roomId: string }
             onItemClick={handleMenuClick}
             theme={themeMode}
             onThemeToggle={() => setIsDark((prev) => !prev)}
+            strokeColor={strokeColor}
+            fillColor={fillColor}
+            onStrokeColorChange={setStrokeColor}
+            onFillColorChange={setFillColor}
           />
         </div>
 
-        <div className="absolute left-1/2 top-6 -translate-x-1/2 pointer-events-auto">
+        <div className="absolute left-1/2 top-6 -translate-x-1/2 pointer-events-auto flex items-center gap-4">
           <TopToolbar activeTool={selectedTool} onToolChange={handleToolChange} />
+          <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className={`flex h-10 w-10 items-center justify-center rounded-xl border backdrop-blur transition-colors ${
+                    isDark
+                      ? "border-white/10 bg-gray-900/80 text-white shadow-[0_12px_28px_-22px_rgba(16,24,40,0.45)]"
+                      : "border-[#eceaf4] bg-white/90 text-[#4c5160] shadow-[0_12px_28px_-22px_rgba(16,24,40,0.45)]"
+                  }`}
+                  title="Colors"
+                >
+                  <div className="h-5 w-5 rounded-full border border-current" style={{ backgroundColor: strokeColor }} />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                className={`w-[280px] p-3 ${isDark ? "border-white/10 bg-gray-900/95 text-white" : "border-[#eceaf4] bg-white text-[#3b3f4d]"}`}
+                align="start"
+              >
+                <ColorPicker value={strokeColor} onChange={([r, g, b]) => setStrokeColor(`#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`)}>
+                  <ColorPickerSelection className="h-40 rounded-lg" />
+                  <ColorPickerHue />
+                  <ColorPickerAlpha />
+                  <div className="flex items-center gap-2">
+                    <ColorPickerEyeDropper />
+                    <ColorPickerOutput />
+                    <ColorPickerFormat />
+                  </div>
+                </ColorPicker>
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
 
         <div className="flex-shrink-0 pointer-events-auto">
@@ -439,121 +485,11 @@ export function Canvas({ roomId, socket }: { socket: WebSocket; roomId: string }
         </div>
       )}
 
-      <div className="absolute bottom-4 left-4 z-20 flex flex-col gap-2">
-        <ColorPicker
-          strokeColor={strokeColor}
-          fillColor={fillColor}
-          onStrokeColorChange={setStrokeColor}
-          onFillColorChange={setFillColor}
-          isDark={isDark}
-        />
-      </div>
+
 
       <div className={`fixed inset-0 pointer-events-none z-0 transition-colors duration-500 ${isDark ? "bg-[#1a1a2e]" : "bg-transparent"}`} />
     </div>
   );
 }
 
-const DEFAULT_COLORS = [
-  "#1e1e1e", "#ffffff", "#ff3b30", "#ff9500", "#ffcc00",
-  "#34c759", "#007aff", "#5856d6", "#af52de", "#ff2d55",
-  "#8e8e93", "#636366", "#000000",
-];
 
-function ColorPicker({
-  strokeColor,
-  fillColor,
-  onStrokeColorChange,
-  onFillColorChange,
-  isDark,
-}: {
-  strokeColor: string;
-  fillColor: string;
-  onStrokeColorChange: (c: string) => void;
-  onFillColorChange: (c: string) => void;
-  isDark: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<"stroke" | "fill">("stroke");
-
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className={`flex h-10 w-10 items-center justify-center rounded-xl border transition-colors ${
-          isDark
-            ? "border-white/10 bg-gray-900/80 text-white"
-            : "border-[#eceaf4] bg-white/90 text-[#4c5160]"
-        } shadow-[0_12px_28px_-22px_rgba(16,24,40,0.45)] backdrop-blur`}
-        title="Colors"
-      >
-        <div
-          className="h-5 w-5 rounded-full border border-current"
-          style={{ backgroundColor: mode === "stroke" ? strokeColor : fillColor }}
-        />
-      </button>
-      {open && (
-        <div
-          className={`absolute bottom-12 left-0 z-50 min-w-[200px] rounded-2xl border p-3 shadow-lg ${
-            isDark
-              ? "border-white/10 bg-gray-900/95 text-white"
-              : "border-[#eceaf4] bg-white text-[#3b3f4d]"
-          }`}
-        >
-          <div className="mb-2 flex gap-2">
-            <button
-              onClick={() => setMode("stroke")}
-              className={`rounded-lg px-3 py-1 text-xs font-medium ${
-                mode === "stroke"
-                  ? "bg-blue-500 text-white"
-                  : isDark ? "bg-white/10" : "bg-gray-100"
-              }`}
-            >
-              Stroke
-            </button>
-            <button
-              onClick={() => setMode("fill")}
-              className={`rounded-lg px-3 py-1 text-xs font-medium ${
-                mode === "fill"
-                  ? "bg-blue-500 text-white"
-                  : isDark ? "bg-white/10" : "bg-gray-100"
-              }`}
-            >
-              Fill
-            </button>
-          </div>
-          <div className="grid grid-cols-7 gap-1.5">
-            {DEFAULT_COLORS.map((color) => (
-              <button
-                key={color}
-                onClick={() => {
-                  if (mode === "stroke") onStrokeColorChange(color);
-                  else onFillColorChange(color);
-                }}
-                className={`h-6 w-6 rounded-full border-2 transition-transform hover:scale-110 ${
-                  (mode === "stroke" ? strokeColor : fillColor) === color
-                    ? "border-blue-500"
-                    : "border-transparent"
-                }`}
-                style={{ backgroundColor: color }}
-                title={color}
-              />
-            ))}
-          </div>
-          <div className="mt-2 flex items-center gap-2">
-            <span className="text-xs opacity-60">Custom:</span>
-            <input
-              type="color"
-              value={mode === "stroke" ? strokeColor : fillColor}
-              onChange={(e) => {
-                if (mode === "stroke") onStrokeColorChange(e.target.value);
-                else onFillColorChange(e.target.value);
-              }}
-              className="h-6 w-8 cursor-pointer rounded border-0 p-0"
-            />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
