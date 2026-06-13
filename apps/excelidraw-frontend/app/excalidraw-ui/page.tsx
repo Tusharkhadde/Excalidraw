@@ -73,6 +73,7 @@ export default function ExcalidrawUIDemo() {
         locked={locked}
         shapes={shapes}
         setShapes={setShapes}
+        isDark={theme === "dark"}
       />
 
       {locked && (
