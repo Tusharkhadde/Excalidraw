@@ -112,6 +112,12 @@ export default function HomePage() {
               <Link href="/signup">
                 <Button variant="primary" size="sm">Get Started</Button>
               </Link>
+              <Link href="/canvas/guest">
+                <Button variant="secondary" size="sm" className="gap-1.5">
+                  <Pen className="h-3.5 w-3.5" />
+                  Try as Guest
+                </Button>
+              </Link>
             </div>
           </div>
         </nav>
@@ -143,6 +149,12 @@ export default function HomePage() {
                 </Link>
                 <Link href="/signin">
                   <Button variant="tertiary" size="lg">Sign In</Button>
+                </Link>
+                <Link href="/canvas/guest">
+                  <Button variant="secondary" size="lg" className="gap-2">
+                    <Pen className="h-4 w-4" />
+                    Try as Guest
+                  </Button>
                 </Link>
               </div>
               <div className="mt-12 flex items-center justify-center gap-8 text-xs text-slate-500 animate-enter animate-enter-d5">
@@ -180,12 +192,20 @@ export default function HomePage() {
             <p className="c1-cta-copy">
               Join thousands of teams who use Excelidraw to bring their ideas to life.
             </p>
-            <Link href="/signup">
-              <Button variant="primary" size="lg" className="gap-2 c1-cta-button">
-                Get Started Free <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-            <p className="c1-cta-note">No credit card required. Free forever.</p>
+            <div className="flex items-center justify-center gap-4 mt-6">
+              <Link href="/signup">
+                <Button variant="primary" size="lg" className="gap-2 c1-cta-button">
+                  Get Started Free <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link href="/canvas/guest">
+                <Button variant="secondary" size="lg" className="gap-2">
+                  <Pen className="h-4 w-4" />
+                  Try as Guest
+                </Button>
+              </Link>
+            </div>
+            <p className="c1-cta-note">No credit card required. Free forever. Guest drawings are not saved.</p>
           </div>
         </section>
 
