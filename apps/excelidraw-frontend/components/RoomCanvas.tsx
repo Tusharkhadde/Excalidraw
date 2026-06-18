@@ -5,11 +5,16 @@ import { useAuth } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Canvas } from "./Canvas";
-import { Wifi, WifiOff, Loader2, Pen } from "lucide-react";
+import { Wifi, WifiOff, Loader2, Pen, UserCheck, Lock } from "lucide-react";
 
 type ConnectionState = "connecting" | "connected" | "disconnected" | "error";
 
-export function RoomCanvas({ roomId }: { roomId: string }) {
+interface RoomCanvasProps {
+  roomId: string;
+  isGuest?: boolean;
+}
+
+export function RoomCanvas({ roomId, isGuest = false }: RoomCanvasProps) {
   const router = useRouter();
   const { token } = useAuth();
   const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -20,13 +25,17 @@ export function RoomCanvas({ roomId }: { roomId: string }) {
   const maxRetries = 5;
 
   const connect = useCallback(() => {
-    if (!token) {
+    const wsUrl = isGuest
+      ? `${WS_URL}?guest=true`
+      : `${WS_URL}?token=${encodeURIComponent(token || "")}`;
+
+    if (!isGuest && !token) {
       setError("Missing login token. Please sign in again.");
       setConnState("error");
       return;
     }
 
-    const ws = new WebSocket(`${WS_URL}?token=${encodeURIComponent(token)}`);
+    const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -60,7 +69,7 @@ export function RoomCanvas({ roomId }: { roomId: string }) {
         setTimeout(connect, delay);
       }
     };
-  }, [token, roomId]);
+  }, [token, roomId, isGuest]);
 
   useEffect(() => {
     connect();
@@ -73,7 +82,7 @@ export function RoomCanvas({ roomId }: { roomId: string }) {
     };
   }, [connect]);
 
-  if (!token) {
+  if (!isGuest && !token) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-void">
         <div className="text-center">
@@ -126,16 +135,22 @@ export function RoomCanvas({ roomId }: { roomId: string }) {
 
   return (
     <div className="relative">
-      <ConnectionBadge state={connState} />
-      <Canvas roomId={roomId} socket={socket} />
+      {isGuest && (
+        <div className="fixed top-0 left-0 right-0 z-40 flex items-center justify-center gap-2 border-b border-amber-200 bg-amber-500/10 px-4 py-2 text-xs font-medium text-amber-600 backdrop-blur-sm">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+          <span>Guest mode - drawings are not saved. <button onClick={() => window.location.href = "/signin"} className="underline hover:text-amber-800">Sign in to save</button></span>
+        </div>
+      )}
+      <ConnectionBadge state={connState} isGuest={isGuest} />
+      <Canvas roomId={roomId} socket={socket} isGuest={isGuest} />
     </div>
   );
 }
 
-function ConnectionBadge({ state }: { state: ConnectionState }) {
+function ConnectionBadge({ state, isGuest }: { state: ConnectionState; isGuest: boolean }) {
   const config = {
     connecting: { color: "text-yellow-400", bg: "bg-yellow-400/10 border-yellow-400/30", label: "Connecting" },
-    connected: { color: "text-mint-signal", bg: "bg-mint-signal/10 border-mint-signal/30", label: "Connected" },
+    connected: { color: "text-mint-signal", bg: "bg-mint-signal/10 border-mint-signal/30", label: isGuest ? "Connected (Guest)" : "Connected" },
     disconnected: { color: "text-yellow-400", bg: "bg-yellow-400/10 border-yellow-400/30", label: "Reconnecting" },
     error: { color: "text-ember-red", bg: "bg-ember-red/10 border-ember-red/30", label: "Error" },
   };
@@ -146,6 +161,9 @@ function ConnectionBadge({ state }: { state: ConnectionState }) {
     <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-buttonpill border ${c.bg} px-3 py-1.5 text-xs ${c.color} backdrop-blur-sm`}>
       <Wifi className="h-3 w-3" />
       {c.label}
+      {isGuest && state === "connected" && (
+        <Lock className="h-3 w-3 text-amber-400" />
+      )}
     </div>
   );
 }
