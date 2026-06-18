@@ -6,7 +6,8 @@ const wss = new WebSocketServer({ port: 8080 });
 
 interface ConnectedClient {
     ws: WebSocket;
-    userId: string;
+    userId: string | null;
+    isGuest: boolean;
     rooms: Set<string>;
 }
 
@@ -30,18 +31,33 @@ function broadcastToRoom(roomId: string, message: object, excludeWs?: WebSocket)
     }
 }
 
+function generateGuestId(): string {
+    return `guest_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
 wss.on("connection", (ws, request) => {
     const url = request.url ?? "";
     const queryString = url.includes("?") ? url.split("?")[1] ?? "" : "";
-    const token = new URLSearchParams(queryString).get("token") ?? "";
+    const params = new URLSearchParams(queryString);
+    const token = params.get("token") ?? "";
+    const isGuest = params.get("guest") === "true";
 
-    const payload = verifyJwt(token);
-    if (!payload) {
-        ws.close(4001, "Unauthorized");
-        return;
+    let userId: string | null = null;
+    let clientIsGuest = false;
+
+    if (isGuest) {
+        clientIsGuest = true;
+        userId = generateGuestId();
+    } else {
+        const payload = verifyJwt(token);
+        if (!payload) {
+            ws.close(4001, "Unauthorized");
+            return;
+        }
+        userId = payload.userId;
     }
 
-    const client: ConnectedClient = { ws, userId: payload.userId, rooms: new Set() };
+    const client: ConnectedClient = { ws, userId, isGuest: clientIsGuest, rooms: new Set() };
     clients.push(client);
 
     ws.on("message", async (raw) => {
@@ -81,16 +97,17 @@ wss.on("connection", (ws, request) => {
                 return;
             }
 
-            try {
-                await prismaClient.chat.create({
-                    data: {
-                        roomId: Number(roomId),
-                        message: JSON.stringify({ shape }),
-                        userId: client.userId,
-                    },
-                });
-            } catch {
-                // room may not exist or invalid id — persist is best-effort
+            if (!client.isGuest && client.userId) {
+                try {
+                    await prismaClient.chat.create({
+                        data: {
+                            roomId: Number(roomId),
+                            message: JSON.stringify({ shape }),
+                            userId: client.userId,
+                        },
+                    });
+                } catch {
+                }
             }
 
             broadcastToRoom(roomId, { type: "draw", roomId, shape, userId: client.userId }, ws);
@@ -106,20 +123,20 @@ wss.on("connection", (ws, request) => {
                 return;
             }
 
-            // Delete old record then insert updated shape
-            try {
-                await prismaClient.chat.deleteMany({
-                    where: { roomId: Number(roomId), message: { contains: shapeId } },
-                });
-                await prismaClient.chat.create({
-                    data: {
-                        roomId: Number(roomId),
-                        message: JSON.stringify({ shape }),
-                        userId: client.userId,
-                    },
-                });
-            } catch {
-                // best-effort persist
+            if (!client.isGuest && client.userId) {
+                try {
+                    await prismaClient.chat.deleteMany({
+                        where: { roomId: Number(roomId), message: { contains: shapeId } },
+                    });
+                    await prismaClient.chat.create({
+                        data: {
+                            roomId: Number(roomId),
+                            message: JSON.stringify({ shape }),
+                            userId: client.userId,
+                        },
+                    });
+                } catch {
+                }
             }
 
             broadcastToRoom(roomId, { type: "update", roomId, shape, userId: client.userId });
@@ -133,15 +150,16 @@ wss.on("connection", (ws, request) => {
                 ws.send(JSON.stringify({ type: "error", message: "Invalid sync payload" }));
                 return;
             }
-            try {
-                await prismaClient.chat.deleteMany({ where: { roomId: Number(roomId) } });
-                for (const shape of shapes) {
-                    await prismaClient.chat.create({
-                        data: { roomId: Number(roomId), message: JSON.stringify({ shape }), userId: client.userId },
-                    });
+            if (!client.isGuest && client.userId) {
+                try {
+                    await prismaClient.chat.deleteMany({ where: { roomId: Number(roomId) } });
+                    for (const shape of shapes) {
+                        await prismaClient.chat.create({
+                            data: { roomId: Number(roomId), message: JSON.stringify({ shape }), userId: client.userId },
+                        });
+                    }
+                } catch {
                 }
-            } catch {
-                // best-effort persist
             }
             broadcastToRoom(roomId, { type: "sync", roomId, shapes, userId: client.userId });
             return;
@@ -153,12 +171,13 @@ wss.on("connection", (ws, request) => {
                 ws.send(JSON.stringify({ type: "error", message: "roomId is required for clear" }));
                 return;
             }
-            try {
-                await prismaClient.chat.deleteMany({
-                    where: { roomId: Number(roomId) },
-                });
-            } catch {
-                // best-effort
+            if (!client.isGuest && client.userId) {
+                try {
+                    await prismaClient.chat.deleteMany({
+                        where: { roomId: Number(roomId) },
+                    });
+                } catch {
+                }
             }
             broadcastToRoom(roomId, { type: "clear", roomId });
             return;
@@ -172,16 +191,17 @@ wss.on("connection", (ws, request) => {
                 return;
             }
 
-            try {
-                await prismaClient.chat.create({
-                    data: {
-                        roomId: Number(roomId),
-                        message,
-                        userId: client.userId,
-                    },
-                });
-            } catch {
-                // best-effort persist
+            if (!client.isGuest && client.userId) {
+                try {
+                    await prismaClient.chat.create({
+                        data: {
+                            roomId: Number(roomId),
+                            message,
+                            userId: client.userId,
+                        },
+                    });
+                } catch {
+                }
             }
 
             broadcastToRoom(roomId, { type: "chat", roomId, message, userId: client.userId }, ws);
