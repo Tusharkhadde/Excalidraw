@@ -32,7 +32,7 @@ export type Tool =
   | "image"
   | "eraser";
 
-export function Canvas({ roomId, socket }: { socket: WebSocket; roomId: string }) {
+export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket; roomId: string; isGuest?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -350,7 +350,7 @@ export function Canvas({ roomId, socket }: { socket: WebSocket; roomId: string }
         </div>
 
         <div className="flex-shrink-0 pointer-events-auto">
-          <TopRightActions shapes={shapes} onClear={handleClearCanvas} />
+          <TopRightActions shapes={shapes} onClear={handleClearCanvas} isGuest={isGuest} />
         </div>
       </div>
 
