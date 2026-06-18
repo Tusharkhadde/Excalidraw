@@ -8,12 +8,14 @@ import {
   Share2,
   Sparkles,
   Trash2,
+  LogIn,
 } from "lucide-react";
 import type { Shape } from "./types";
 
 interface TopRightActionsProps {
   shapes: Shape[];
   onClear?: () => void;
+  isGuest?: boolean;
 }
 
 function exportToSvg(shapes: Shape[]): string {
@@ -58,7 +60,7 @@ function exportToSvg(shapes: Shape[]): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">${shapeMarkup}</svg>`;
 }
 
-export function TopRightActions({ shapes, onClear }: TopRightActionsProps) {
+export function TopRightActions({ shapes, onClear, isGuest = false }: TopRightActionsProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -80,6 +82,10 @@ export function TopRightActions({ shapes, onClear }: TopRightActionsProps) {
   }, []);
 
   const handleExport = () => {
+    if (isGuest) {
+      promptSignIn();
+      return;
+    }
     const svg = exportToSvg(shapes);
     const blob = new Blob([svg], { type: "image/svg+xml" });
     const url = URL.createObjectURL(blob);
@@ -92,6 +98,10 @@ export function TopRightActions({ shapes, onClear }: TopRightActionsProps) {
   };
 
   const handleExportPng = () => {
+    if (isGuest) {
+      promptSignIn();
+      return;
+    }
     const svgString = exportToSvg(shapes);
     const blob = new Blob([svgString], { type: "image/svg+xml" });
     const url = URL.createObjectURL(blob);
@@ -124,6 +134,10 @@ export function TopRightActions({ shapes, onClear }: TopRightActionsProps) {
   };
 
   const handleShare = async () => {
+    if (isGuest) {
+      promptSignIn();
+      return;
+    }
     const json = JSON.stringify({ shapes });
     try {
       if (navigator.clipboard) {
@@ -134,6 +148,13 @@ export function TopRightActions({ shapes, onClear }: TopRightActionsProps) {
       }
     } catch {
       alert("Share failed");
+    }
+  };
+
+  const promptSignIn = () => {
+    setMenuOpen(false);
+    if (confirm("You're in guest mode. Sign in to save and share your drawings?")) {
+      window.location.href = "/signin";
     }
   };
 
