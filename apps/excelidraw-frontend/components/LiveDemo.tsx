@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Share, Users } from "lucide-react";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LazySection } from "@/components/ui/lazy-section";
+import { GsapReveal } from "@/components/ui/gsap-reveal";
 
 const slides = [
   {
@@ -190,13 +192,14 @@ export default function LiveDemo() {
 
   return (
     <LazySection>
-      <section id="demo" className="bg-slate-50 dark:bg-slate-950 py-24 md:py-32 border-b border-slate-100 dark:border-slate-900 transition-colors">
+      <section id="demo" className="bg-slate-50 py-24 md:py-32 border-b border-slate-100 transition-colors">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <GsapReveal direction="up" distance={30} triggerHook="top 85%">
           <div className="mb-16 text-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 px-3.5 py-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 uppercase tracking-wider">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3.5 py-1 text-xs font-semibold text-indigo-600 border border-indigo-100 uppercase tracking-wider">
               See it in action
             </span>
-            <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+            <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
               Live demo
             </h2>
           </div>
@@ -204,31 +207,36 @@ export default function LiveDemo() {
           {/* Carousel Layout */}
           <div className="relative flex items-center justify-center w-full">
             {/* Left Preview Slide (Tactile Peeking) */}
-            <div className="hidden lg:block w-[180px] shrink-0 opacity-20 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm aspect-[16/10] transform scale-90 -translate-x-12 select-none pointer-events-none transition-all duration-500 bg-[#F8FAFC] dark:bg-slate-900">
+            <div className="hidden lg:block w-[180px] shrink-0 opacity-20 border border-slate-200 rounded-2xl overflow-hidden shadow-sm aspect-[16/10] transform scale-90 -translate-x-12 select-none pointer-events-none transition-all duration-500 bg-[#F8FAFC]">
               <div className="h-full w-full pointer-events-none p-1">
                 {slides[leftIndex].svg}
               </div>
             </div>
 
             {/* Main Interactive Active Slide */}
-            <div className="relative w-full max-w-4xl z-10 mx-auto transition-all duration-500">
-              <div className="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-950 shadow-xl dark:shadow-indigo-950/10">
+            <div className="relative w-full max-w-4xl z-10 mx-auto transition-all duration-500 group">
+              {/* Glowing Border effect on main demo container */}
+              <div className="absolute -inset-[3px] bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 rounded-[1.8rem] opacity-30 blur-[8px] group-hover:opacity-60 transition-opacity duration-500" />
+              <div className="absolute -inset-[3px] bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 rounded-[1.8rem] opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
+              
+              <div className="relative overflow-hidden rounded-3xl border border-white bg-white shadow-xl">
                 {/* Browser Top bar control */}
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 bg-slate-50 dark:bg-slate-900 px-6 py-4">
+                <div className="flex items-center justify-between border-b border-slate-200/80 bg-slate-50 px-6 py-4">
                   <div className="flex items-center gap-2">
                     <div className="h-3.5 w-3.5 rounded-full bg-[#EF4444]/90" />
                     <div className="h-3.5 w-3.5 rounded-full bg-[#F59E0B]/90" />
                     <div className="h-3.5 w-3.5 rounded-full bg-[#10B981]/90" />
                   </div>
-                  <div className="h-6 w-56 rounded-md bg-slate-150 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 text-center text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-center font-medium">
+                  <div className="h-6 w-56 rounded-md bg-white border border-slate-200/50 text-center text-[11px] text-slate-500 flex items-center justify-center font-medium shadow-sm">
                     excelidraw.com/demo/{slides[active].title.toLowerCase().replace(/\s+/g, "-")}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1 rounded-md bg-indigo-600 px-3 py-1 text-xs font-semibold text-white cursor-pointer hover:bg-indigo-700 transition-colors">
-                      Share
-                      <Share className="h-3 w-3" />
-                    </div>
-                  </div>
+                  <Link
+                    href="/canvas/guest"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-1.5 text-xs font-semibold text-white shadow-md hover:brightness-110 transition-all active:scale-[0.97]"
+                  >
+                    Try Demo
+                    <Zap className="h-3 w-3 fill-white" />
+                  </Link>
                 </div>
 
                 {/* Simulated Whiteboard Viewport */}
@@ -242,7 +250,7 @@ export default function LiveDemo() {
               {/* Slider Prev Chevrons */}
               <button
                 onClick={prev}
-                className="absolute left-[-24px] top-1/2 -translate-y-1/2 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 shadow-md hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-indigo-600 transition-all active:scale-95"
+                className="absolute left-[-24px] top-1/2 -translate-y-1/2 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-white border border-slate-200 text-slate-600 shadow-lg hover:bg-slate-50 hover:text-indigo-600 hover:scale-105 transition-all active:scale-95"
                 aria-label="Previous slide"
               >
                 <ChevronLeft className="h-6 w-6" />
@@ -251,7 +259,7 @@ export default function LiveDemo() {
               {/* Slider Next Chevrons */}
               <button
                 onClick={next}
-                className="absolute right-[-24px] top-1/2 -translate-y-1/2 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 shadow-md hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-indigo-600 transition-all active:scale-95"
+                className="absolute right-[-24px] top-1/2 -translate-y-1/2 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-white border border-slate-200 text-slate-600 shadow-lg hover:bg-slate-50 hover:text-indigo-600 hover:scale-105 transition-all active:scale-95"
                 aria-label="Next slide"
               >
                 <ChevronRight className="h-6 w-6" />
@@ -259,7 +267,7 @@ export default function LiveDemo() {
             </div>
 
             {/* Right Preview Slide */}
-            <div className="hidden lg:block w-[180px] shrink-0 opacity-20 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm aspect-[16/10] transform scale-90 translate-x-12 select-none pointer-events-none transition-all duration-500 bg-[#F8FAFC] dark:bg-slate-900">
+            <div className="hidden lg:block w-[180px] shrink-0 opacity-20 border border-slate-200 rounded-2xl overflow-hidden shadow-sm aspect-[16/10] transform scale-90 translate-x-12 select-none pointer-events-none transition-all duration-500 bg-[#F8FAFC]">
               <div className="h-full w-full pointer-events-none p-1">
                 {slides[rightIndex].svg}
               </div>
@@ -267,19 +275,20 @@ export default function LiveDemo() {
           </div>
 
           {/* Dots Indicator */}
-          <div className="mt-8 flex justify-center gap-2.5">
+          <div className="mt-12 flex justify-center gap-2.5">
             {slides.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setActive(i)}
                 className={cn(
                   "h-2.5 rounded-full transition-all duration-300",
-                  i === active ? "w-8 bg-indigo-600 shadow-md shadow-indigo-600/30" : "w-2.5 bg-slate-300 dark:bg-slate-800 hover:bg-slate-400"
+                  i === active ? "w-8 bg-indigo-600 shadow-md shadow-indigo-600/30" : "w-2.5 bg-slate-300 hover:bg-slate-400"
                 )}
                 aria-label={`Go to slide ${i + 1}`}
               />
             ))}
           </div>
+          </GsapReveal>
         </div>
       </section>
     </LazySection>
