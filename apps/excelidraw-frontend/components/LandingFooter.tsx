@@ -68,7 +68,7 @@ function DiscordIcon() {
 
 export default function LandingFooter() {
   return (
-    <footer className="border-t border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-[#0B0F19] text-slate-600 dark:text-gray-300 transition-colors">
+    <footer className="border-t border-slate-100 bg-slate-50 text-slate-600 transition-colors">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="grid gap-12 py-16 md:grid-cols-[1fr_2fr]">
           {/* Brand Details */}
@@ -77,11 +77,11 @@ export default function LandingFooter() {
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-md shadow-indigo-500/20">
                 <PenTool className="h-4.5 w-4.5 text-white transform -rotate-45" />
               </div>
-              <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+              <span className="text-lg font-bold tracking-tight text-slate-900">
                 Excelidraw
               </span>
             </Link>
-            <p className="max-w-xs text-sm leading-relaxed text-slate-500 dark:text-gray-400">
+            <p className="max-w-xs text-sm leading-relaxed text-slate-500">
               A real-time collaborative whiteboard.
               <br />
               Open-source. Self-hostable. Yours.
@@ -91,19 +91,19 @@ export default function LandingFooter() {
                 href="https://github.com/excalidraw/excalidraw"
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center justify-center h-8 w-8 rounded-lg text-slate-400 dark:text-gray-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/5 transition-all"
+                className="flex items-center justify-center h-8 w-8 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-200/50 transition-all"
               >
                 <GitHubIcon />
               </a>
               <a
                 href="#"
-                className="flex items-center justify-center h-8 w-8 rounded-lg text-slate-400 dark:text-gray-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/5 transition-all"
+                className="flex items-center justify-center h-8 w-8 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-200/50 transition-all"
               >
                 <XIcon />
               </a>
               <a
                 href="#"
-                className="flex items-center justify-center h-8 w-8 rounded-lg text-slate-400 dark:text-gray-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/5 transition-all"
+                className="flex items-center justify-center h-8 w-8 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-200/50 transition-all"
               >
                 <DiscordIcon />
               </a>
@@ -114,7 +114,7 @@ export default function LandingFooter() {
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
             {Object.entries(footerSections).map(([category, links]) => (
               <div key={category} className="flex flex-col gap-4 text-left">
-                <span className="text-sm font-semibold text-slate-900 dark:text-white tracking-wider uppercase">
+                <span className="text-sm font-semibold text-slate-900 tracking-wider uppercase">
                   {category}
                 </span>
                 <ul className="flex flex-col gap-2.5">
@@ -122,7 +122,7 @@ export default function LandingFooter() {
                     <li key={link.label}>
                       <Link
                         href={link.href}
-                        className="text-sm text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+                        className="text-sm text-slate-500 hover:text-slate-900 transition-colors"
                       >
                         {link.label}
                       </Link>
@@ -135,16 +135,16 @@ export default function LandingFooter() {
         </div>
 
         {/* Bottom bar */}
-        <div className="flex flex-col items-center justify-between gap-6 border-t border-slate-200/60 dark:border-white/5 py-8 text-sm text-slate-450 dark:text-gray-500 md:flex-row">
+        <div className="flex flex-col items-center justify-between gap-6 border-t border-slate-200/60 py-8 text-sm text-slate-500 md:flex-row">
           <span>
             &copy; {new Date().getFullYear()} Excelidraw. Open source under the
             MIT License.
           </span>
           
           {/* Custom Heart Badge pill */}
-          <div className="flex items-center gap-2 rounded-full border border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900/60 pl-4 pr-2 py-1.5 text-xs text-slate-700 dark:text-gray-300">
+          <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white pl-4 pr-2 py-1.5 text-xs text-slate-700">
             <span>Made with <span className="text-red-500">❤️</span> by the community</span>
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-500 dark:text-indigo-400 text-[10px] font-bold">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-500 text-[10px] font-bold">
               ♥
             </span>
           </div>
