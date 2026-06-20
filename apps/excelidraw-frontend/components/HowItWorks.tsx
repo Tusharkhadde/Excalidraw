@@ -1,46 +1,45 @@
 import { LazySection } from "@/components/ui/lazy-section";
+import { GsapReveal } from "@/components/ui/gsap-reveal";
 
 const steps = [
   {
-    number: "1",
+    number: "01",
     title: "Create a room",
-    description: "Start a new whiteboard room in one click.",
-    badgeClass: "bg-indigo-500 text-white shadow-indigo-500/20",
-    illustration: (
-      <svg className="w-16 h-16 text-indigo-500" viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        {/* Room door illustration */}
-        <rect x="12" y="10" width="40" height="48" rx="4" className="stroke-indigo-400 dark:stroke-indigo-600" />
-        <line x1="12" y1="46" x2="52" y2="46" />
-        <path d="M22 46V22a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v24" className="stroke-indigo-600 dark:stroke-indigo-400" strokeWidth="2.5" />
-        <circle cx="36" cy="34" r="2.5" className="fill-indigo-600 dark:fill-indigo-400" />
+    description: "Initialize a secure whiteboard environment with a single click. No sign-up required for your guests.",
+    color: "from-indigo-500 to-purple-500",
+    shadowColor: "shadow-indigo-500/25",
+    icon: (
+      <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
       </svg>
     ),
   },
   {
-    number: "2",
+    number: "02",
     title: "Share the link",
-    description: "Copy the link and share it with your team.",
-    badgeClass: "bg-emerald-500 text-white shadow-emerald-500/20",
-    illustration: (
-      <svg className="w-16 h-16 text-emerald-500" viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        {/* Chain link illustration */}
-        <path d="M26 38a9 9 0 0 1 0-13l8-8a9 9 0 0 1 13 13l-4 4" className="stroke-emerald-400 dark:stroke-emerald-600" />
-        <path d="M38 26a9 9 0 0 1 0 13l-8 8a9 9 0 0 1-13-13l4-4" className="stroke-emerald-600 dark:stroke-emerald-400" strokeWidth="2.5" />
+    description: "Distribute your unique session link. Access is instantly granted to anyone with the URL.",
+    color: "from-emerald-400 to-teal-500",
+    shadowColor: "shadow-emerald-500/25",
+    icon: (
+      <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
       </svg>
     ),
   },
   {
-    number: "3",
+    number: "03",
     title: "Draw together",
-    description: "Everyone joins instantly and you create in real time.",
-    badgeClass: "bg-blue-500 text-white shadow-blue-500/20",
-    illustration: (
-      <svg className="w-16 h-16 text-blue-500" viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        {/* Team users illustration */}
-        <circle cx="20" cy="24" r="6" className="stroke-blue-400 dark:stroke-blue-600" />
-        <path d="M10 44c0-5 6-7 10-7s10 2 10 7" className="stroke-blue-400 dark:stroke-blue-600" />
-        <circle cx="44" cy="24" r="6" className="stroke-blue-600 dark:stroke-blue-400" strokeWidth="2.5" />
-        <path d="M34 44c0-5 6-7 10-7s10 2 10 7" className="stroke-blue-600 dark:stroke-blue-400" strokeWidth="2.5" />
+    description: "Collaborate in real-time. See cursors move and shapes appear instantly as your team creates.",
+    color: "from-blue-500 to-cyan-500",
+    shadowColor: "shadow-blue-500/25",
+    icon: (
+      <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+        <circle cx="9" cy="7" r="4"></circle>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
       </svg>
     ),
   },
@@ -49,51 +48,84 @@ const steps = [
 export default function HowItWorks() {
   return (
     <LazySection>
-      <section id="how-it-works" className="bg-white dark:bg-slate-900 py-24 md:py-32 border-b border-slate-100 dark:border-slate-900 transition-colors">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="mb-16 text-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 px-3.5 py-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 uppercase tracking-wider">
-              Simple as 1-2-3
-            </span>
-            <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
-              How it works
-            </h2>
-          </div>
-
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-4">
-            {steps.map((step, index) => (
-              <div key={step.number} className="flex flex-col md:flex-row items-center w-full">
-                {/* Step Card */}
-                <div className="flex flex-col items-center text-center p-8 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800/80 rounded-2xl shadow-sm w-full md:max-w-sm relative group hover:shadow-md transition-all duration-300">
-                  {/* Step Number Badge */}
-                  <div className={`absolute -top-4 left-6 flex h-8 w-8 items-center justify-center rounded-full font-bold text-sm shadow-lg ${step.badgeClass}`}>
-                    {step.number}
-                  </div>
-
-                  <div className="mb-6 h-20 flex items-center justify-center transition-transform group-hover:scale-105 duration-300">
-                    {step.illustration}
-                  </div>
-
-                  <h3 className="mb-2 text-lg font-bold text-slate-900 dark:text-white">
-                    {step.title}
-                  </h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-[240px]">
-                    {step.description}
-                  </p>
-                </div>
-
-                {/* Connector Arrow (Desktop) */}
-                {index < steps.length - 1 && (
-                  <div className="hidden md:flex items-center justify-center px-4 text-indigo-500/40 w-full">
-                    <svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5 5" className="animate-pulse">
-                      <path d="M4 12h32" />
-                      <path d="M30 6l6 6-6 6" strokeDasharray="none" />
-                    </svg>
-                  </div>
-                )}
+      <section id="how-it-works" className="relative py-24 md:py-32 overflow-hidden bg-white border-y border-slate-100">
+        {/* Background Decorative Elements */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-indigo-500/5 blur-[120px] rounded-full pointer-events-none" />
+        
+        <div className="relative mx-auto max-w-7xl px-6 lg:px-8 z-10">
+          <div className="mb-20 text-center max-w-3xl mx-auto">
+            <GsapReveal direction="up" distance={20}>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-50 border border-slate-200 shadow-sm mb-6">
+                <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
+                <span className="text-sm font-semibold text-slate-900 tracking-wide uppercase">Simple Process</span>
               </div>
-            ))}
+            </GsapReveal>
+            
+            <GsapReveal direction="up" distance={20} delay={0.1}>
+              <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 mb-6">
+                From idea to <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-cyan-400">collaboration</span> in seconds
+              </h2>
+            </GsapReveal>
+            
+            <GsapReveal direction="up" distance={20} delay={0.2}>
+              <p className="text-lg text-slate-600 leading-relaxed">
+                We've stripped away the complexity. No downloads, no mandatory accounts, just instant access to a shared canvas.
+              </p>
+            </GsapReveal>
           </div>
+
+          <div className="relative mt-20">
+            {/* Connecting line for desktop */}
+            <div className="hidden md:block absolute top-[5.5rem] left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-200 to-transparent z-0" />
+
+            <GsapReveal stagger="children" staggerAmount={0.3} direction="up" distance={40} triggerHook="top 80%" className="grid grid-cols-1 md:grid-cols-3 gap-16 md:gap-12 relative z-10">
+              {steps.map((step, index) => (
+                <div key={step.number} className="group relative mt-6 md:mt-0">
+                  
+                  {/* Animated Gradient Border (Lighting) */}
+                  <div className="absolute -inset-[2px] bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 rounded-3xl opacity-0 group-hover:opacity-100 blur-[4px] transition-opacity duration-500" />
+                  <div className="absolute -inset-[2px] bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 rounded-3xl opacity-20 group-hover:opacity-100 transition-opacity duration-500" />
+                  
+                  {/* Card Content */}
+                  <div className="relative flex flex-col items-center text-center p-8 h-full bg-white rounded-3xl shadow-xl transition-transform duration-500 group-hover:-translate-y-1">
+                    
+                    {/* Number Indicator */}
+                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center text-white font-bold text-lg border-4 border-white z-20 shadow-lg transition-transform duration-500 group-hover:scale-110 group-hover:bg-indigo-600">
+                      {step.number}
+                    </div>
+
+                    {/* Icon Container */}
+                    <div className={`mt-8 mb-8 relative w-20 h-20 flex items-center justify-center rounded-2xl bg-gradient-to-br ${step.color} text-white shadow-lg ${step.shadowColor} group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500 ease-out z-10`}>
+                      {step.icon}
+                      {/* Glow effect behind icon */}
+                      <div className={`absolute inset-0 bg-gradient-to-br ${step.color} blur-xl opacity-0 group-hover:opacity-40 transition-opacity duration-500`} />
+                    </div>
+
+                    <h3 className="mb-4 text-xl font-bold text-slate-900">
+                      {step.title}
+                    </h3>
+                    <p className="text-slate-600 leading-relaxed text-sm md:text-base">
+                      {step.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </GsapReveal>
+          </div>
+
+          {/* Prominent Action Button */}
+          <GsapReveal direction="up" distance={20} delay={0.4}>
+            <div className="mt-24 flex justify-center">
+              <a href="#hero" className="group relative inline-flex items-center justify-center gap-3 px-10 py-5 text-lg font-bold text-white bg-slate-900 rounded-full overflow-hidden transition-transform hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-slate-900/20 ring-4 ring-slate-900/10">
+                <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <span className="relative z-10 group-hover:text-white transition-colors">Start Drawing Free</span>
+                <svg className="relative z-10 w-6 h-6 group-hover:text-white group-hover:translate-x-1 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14"></path>
+                  <path d="M12 5l7 7-7 7"></path>
+                </svg>
+              </a>
+            </div>
+          </GsapReveal>
         </div>
       </section>
     </LazySection>
