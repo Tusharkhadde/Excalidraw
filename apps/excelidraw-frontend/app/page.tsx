@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -11,9 +11,10 @@ import Hero from "@/components/Hero";
 import Features from "@/components/Features";
 import HowItWorks from "@/components/HowItWorks";
 import LiveDemo from "@/components/LiveDemo";
-import OpenSource from "@/components/OpenSource";
+import Testimonials from "@/components/Testimonials";
 import CTA from "@/components/CTA";
 import LandingFooter from "@/components/LandingFooter";
+import { Button } from "@/components/ui/button";
 import {
   Plus,
   ExternalLink,
@@ -37,7 +38,7 @@ function LandingHero() {
       <Features />
       <HowItWorks />
       <LiveDemo />
-      <OpenSource />
+      <Testimonials />
       <CTA />
       <LandingFooter />
     </div>
@@ -175,13 +176,13 @@ function Dashboard() {
                 placeholder="my-room-slug"
                 className="input-raycast flex-1"
               />
-              <button
+              <Button
                 onClick={handleCreateRoom}
                 disabled={isCreating}
-                className="rounded-full bg-violet-600 px-5 py-2 text-sm font-semibold text-white hover:bg-violet-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-violet-500/20"
+                variant="primary"
               >
                 {isCreating ? "Creating..." : "Create & Open"}
-              </button>
+              </Button>
             </div>
             {createError && (
               <p className="mt-2 text-xs text-red-500">{createError}</p>
@@ -203,12 +204,13 @@ function Dashboard() {
                 placeholder="room-id or room-slug"
                 className="input-raycast flex-1"
               />
-              <button
+              <Button
                 onClick={handleJoinRoom}
-                className="rounded-full bg-gray-900 px-5 py-2 text-sm font-semibold text-white hover:bg-gray-800 transition-all"
+                variant="default"
+                className="bg-gray-900 hover:bg-gray-800"
               >
                 Join
-              </button>
+              </Button>
             </div>
             {joinError && (
               <p className="mt-2 text-xs text-red-500">{joinError}</p>
