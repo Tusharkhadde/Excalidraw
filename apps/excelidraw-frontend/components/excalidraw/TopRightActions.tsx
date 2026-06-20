@@ -8,7 +8,6 @@ import {
   Share2,
   Sparkles,
   Trash2,
-  LogIn,
 } from "lucide-react";
 import type { Shape } from "./types";
 
