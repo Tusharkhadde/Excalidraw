@@ -123,6 +123,13 @@
   }
   body {
     @apply bg-[#f8f5ff] text-gray-900;
+    /* Hide scrollbar globally for clean look */
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  body::-webkit-scrollbar {
+    display: none;
   }
 
   .c1-shell *,
