@@ -161,7 +161,7 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
       clearInterval(syncInterval);
       nextGame.destroy();
     };
-  }, [roomId, socket, dimensions.width, fillColor, strokeColor]);
+  }, [roomId, socket, dimensions.width]);
 
   const handleToolChange = (toolId: string) => {
     if (locked && toolId !== "lock") return;
@@ -323,7 +323,7 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
                   className={`flex h-10 w-10 items-center justify-center rounded-xl border backdrop-blur transition-colors ${
                     isDark
                       ? "border-white/10 bg-gray-900/80 text-white shadow-[0_12px_28px_-22px_rgba(16,24,40,0.45)]"
-                      : "border-[#eceaf4] bg-white/90 text-[#4c5160] shadow-[0_12px_28px_-22px_rgba(16,24,40,0.45)]"
+                      : "border-gray-200 bg-white text-gray-600 shadow-lg shadow-gray-200/50"
                   }`}
                   title="Colors"
                 >
@@ -331,7 +331,7 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
                 </button>
               </PopoverTrigger>
               <PopoverContent
-                className={`w-[280px] p-3 ${isDark ? "border-white/10 bg-gray-900/95 text-white" : "border-[#eceaf4] bg-white text-[#3b3f4d]"}`}
+                className={`w-[280px] p-3 ${isDark ? "border-white/10 bg-gray-900/95 text-white" : "border-gray-200 bg-white text-gray-900 shadow-xl"}`}
                 align="start"
               >
                 <ColorPicker value={strokeColor} onChange={([r, g, b]) => setStrokeColor(`#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`)}>
@@ -355,21 +355,21 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
       </div>
 
       {locked && (
-        <div className="absolute top-24 left-1/2 z-30 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border border-amber-200 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-600 shadow-sm backdrop-blur dark:text-amber-400">
-          <span className="h-2 w-2 rounded-full bg-amber-500" />
+        <div className="absolute top-24 left-1/2 z-30 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1.5 text-xs font-medium text-yellow-700 shadow-sm backdrop-blur">
+          <span className="h-2 w-2 rounded-full bg-yellow-500" />
           Canvas is locked
         </div>
       )}
 
       {showHint && !locked && (
         <div className="pointer-events-none absolute inset-x-0 top-28 z-10 flex justify-center">
-          <p className="text-center text-[14px] text-[#b3b5c0] dark:text-gray-500">
+          <p className="text-center text-[14px] text-gray-400">
             To move canvas, hold{" "}
-            <kbd className="rounded-md border border-[#e8e6f2] bg-white/90 px-1.5 py-0.5 text-[13px] font-mono text-[#9c9fad] shadow-sm dark:border-white/10 dark:bg-gray-900/80 dark:text-gray-300">
+            <kbd className="rounded-md border border-gray-200 bg-white px-1.5 py-0.5 text-[13px] font-mono text-gray-500 shadow-sm">
               Scroll wheel
             </kbd>{" "}
             or{" "}
-            <kbd className="rounded-md border border-[#e8e6f2] bg-white/90 px-1.5 py-0.5 text-[13px] font-mono text-[#9c9fad] shadow-sm dark:border-white/10 dark:bg-gray-900/80 dark:text-gray-300">
+            <kbd className="rounded-md border border-gray-200 bg-white px-1.5 py-0.5 text-[13px] font-mono text-gray-500 shadow-sm">
               Space
             </kbd>{" "}
             while dragging, or use the hand tool
@@ -417,20 +417,20 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
         onChange={handleImageUpload}
       />
 
-      <div className={`absolute bottom-4 left-1/2 z-20 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border ${isDark ? "border-white/10 bg-gray-900/80 text-gray-300" : "border-[#e8e6f2] bg-white/90 text-[#777b8b]"} px-3 py-1.5 text-[11px] shadow-[0_12px_28px_-22px_rgba(16,24,40,0.45)] backdrop-blur transition-colors duration-300`}>
+      <div className={`absolute bottom-4 left-1/2 z-20 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border ${isDark ? "border-white/10 bg-gray-900/80 text-gray-300" : "border-gray-200 bg-white text-gray-600 shadow-lg shadow-gray-200/50"} px-3 py-1.5 text-[11px] backdrop-blur transition-colors duration-300`}>
         <span className={`h-1.5 w-1.5 rounded-full ${isDark ? "bg-blue-400" : "bg-blue-500"}`} />
         <span className="font-medium capitalize">{selectedTool}</span>
-        <span className={isDark ? "text-gray-500" : "text-[#d1d5e3]"}>•</span>
+        <span className={isDark ? "text-gray-500" : "text-gray-300"}>•</span>
         <span>{Math.round(zoom * 100)}%</span>
       </div>
 
-      <div className={`absolute bottom-5 right-24 z-20 flex h-10 w-10 items-center justify-center rounded-2xl ${isDark ? "bg-gray-900/80 text-[#8f87f0]" : "bg-white/90 text-[#6d63da]"} shadow-[0_12px_28px_-22px_rgba(16,24,40,0.45)]`}>
+      <div className={`absolute bottom-5 right-24 z-20 flex h-10 w-10 items-center justify-center rounded-2xl ${isDark ? "bg-gray-900/80 text-[#8f87f0]" : "bg-white text-purple-600 shadow-lg shadow-gray-200/50"}`}>
         <ShieldCheck className="h-5 w-5" strokeWidth={1.8} />
       </div>
 
       <button
         onClick={() => setShowShortcuts(true)}
-        className={`absolute bottom-5 right-6 z-20 flex h-12 w-12 items-center justify-center rounded-2xl ${isDark ? "bg-gray-900/80 text-white" : "bg-[#ece9f5] text-[#2d3140]"} shadow-[0_12px_28px_-22px_rgba(16,24,40,0.45)] transition-colors`}
+        className={`absolute bottom-5 right-6 z-20 flex h-12 w-12 items-center justify-center rounded-2xl ${isDark ? "bg-gray-900/80 text-white" : "bg-white text-gray-700 shadow-lg shadow-gray-200/50"} transition-colors`}
         title="Show shortcuts"
       >
         <HelpCircle className="h-5 w-5" strokeWidth={1.8} />
@@ -439,14 +439,14 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
       {showShortcuts && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowShortcuts(false)}>
           <div
-            className="cheat-sheet mx-4 w-full max-w-md overflow-hidden rounded-2xl border border-white/10 frosted-glass shadow-xl-dark"
+            className="cheat-sheet mx-4 w-full max-w-md overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-              <h2 className="text-lg font-semibold text-white">Keyboard Shortcuts</h2>
+            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+              <h2 className="text-lg font-semibold text-gray-900">Keyboard Shortcuts</h2>
               <button
                 onClick={() => setShowShortcuts(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-white/5 hover:text-white"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-900"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -454,20 +454,20 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
             <div className="max-h-[60vh] overflow-y-auto px-5 py-4">
               <div className="grid grid-cols-1 gap-1">
                 {shortcuts.map((shortcut, index) => (
-                  <div key={index} className="flex items-center justify-between rounded-lg px-2 py-2 hover:bg-white/5">
-                    <span className="text-sm text-gray-300">{shortcut.desc}</span>
+                  <div key={index} className="flex items-center justify-between rounded-lg px-2 py-2 hover:bg-gray-50">
+                    <span className="text-sm text-gray-600">{shortcut.desc}</span>
                     <span className="flex items-center gap-1">
                       {Array.isArray(shortcut.keys) ? (
                         shortcut.keys.map((key, keyIndex) => (
                           <span key={keyIndex}>
-                            <kbd className="inline-flex items-center rounded border border-white/10 bg-white/10 px-2 py-0.5 text-xs font-mono text-gray-200">
+                            <kbd className="inline-flex items-center rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-mono text-gray-700">
                               {key}
                             </kbd>
-                            {keyIndex < shortcut.keys.length - 1 && <span className="mx-1 text-xs text-gray-500">+</span>}
+                            {keyIndex < shortcut.keys.length - 1 && <span className="mx-1 text-xs text-gray-400">+</span>}
                           </span>
                         ))
                       ) : (
-                        <kbd className="rounded border border-white/10 bg-white/10 px-2 py-0.5 text-xs font-mono text-gray-200">
+                        <kbd className="rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-mono text-gray-700">
                           {shortcut.keys}
                         </kbd>
                       )}
@@ -476,20 +476,16 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
                 ))}
               </div>
             </div>
-            <div className="border-t border-white/10 px-5 py-3 text-center">
-              <p className="text-xs text-gray-500">
-                Press <kbd className="rounded bg-white/5 px-1.5 py-0.5 text-xs font-mono">?</kbd> to toggle this window
+            <div className="border-t border-gray-100 px-5 py-3 text-center">
+              <p className="text-xs text-gray-400">
+                Press <kbd className="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-mono">?</kbd> to toggle this window
               </p>
             </div>
           </div>
         </div>
       )}
 
-
-
       <div className={`fixed inset-0 pointer-events-none z-0 transition-colors duration-500 ${isDark ? "bg-[#1a1a2e]" : "bg-transparent"}`} />
     </div>
   );
 }
-
-
