@@ -1,5 +1,6 @@
 import { Star, ExternalLink } from "lucide-react";
 import { LazySection } from "@/components/ui/lazy-section";
+import { GsapReveal } from "@/components/ui/gsap-reveal";
 
 const contributors = [
   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80",
@@ -15,6 +16,7 @@ export default function OpenSource() {
     <LazySection>
       <section id="open-source" className="bg-slate-50 dark:bg-slate-950 py-24 md:py-32 border-b border-slate-100 dark:border-slate-900 transition-colors">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <GsapReveal direction="up" distance={30} triggerHook="top 85%">
           <div className="relative overflow-hidden rounded-3xl bg-[#0F172A] border border-white/5 shadow-2xl p-8 md:p-14">
             {/* Grid background effect */}
             <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none" />
@@ -103,6 +105,7 @@ export default function OpenSource() {
               </div>
             </div>
           </div>
+          </GsapReveal>
         </div>
       </section>
     </LazySection>
