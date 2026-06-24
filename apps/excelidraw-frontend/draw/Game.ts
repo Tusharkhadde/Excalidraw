@@ -87,6 +87,15 @@ function getShapeHandles(shape: Shape): HandleInfo[] {
         hs.push({ type: "sc", x: cx, y: cy + ry });
         hs.push({ type: "ec", x: cx + rx, y: cy });
         hs.push({ type: "wc", x: cx - rx, y: cy });
+    } else if (shape.type === "text") {
+        const tw = (shape.text?.length || 0) * shape.fontSize * 0.6;
+        const th = shape.fontSize * 1.2;
+        const tx = shape.x;
+        const ty = shape.y - shape.fontSize;
+        hs.push({ type: "tl", x: tx, y: ty });
+        hs.push({ type: "tr", x: tx + tw, y: ty });
+        hs.push({ type: "bl", x: tx, y: ty + th });
+        hs.push({ type: "br", x: tx + tw, y: ty + th });
     }
     return hs;
 }
@@ -110,14 +119,14 @@ export class Game {
     private selectedShapeId: string | null = null;
     private dragOffset = { x: 0, y: 0 };
     private isSpaceDown = false;
-    private onTextClick: ((x: number, y: number) => void) | null = null;
+    private onTextClick: ((canvasX: number, canvasY: number, screenX: number, screenY: number, editingShape?: Shape) => void) | null = null;
     private onImageClick: (() => void) | null = null;
     private onZoomChange: ((zoom: number) => void) | null = null;
 
     private isResizing = false;
     private activeHandle: HandleType = null;
     private hoveredShapeId: string | null = null;
-    private resizeStart = { x: 0, y: 0, shapeX: 0, shapeY: 0, shapeW: 0, shapeH: 0, centerX: 0, centerY: 0, radius: 0 };
+    private resizeStart = { x: 0, y: 0, shapeX: 0, shapeY: 0, shapeW: 0, shapeH: 0, shapeFontSize: 0, centerX: 0, centerY: 0, radius: 0 };
 
     private isErasing = false;
     private erasedIds = new Set<string>();
@@ -133,6 +142,7 @@ export class Game {
     private boundMouseDown: (e: MouseEvent) => void;
     private boundMouseUp: (e: MouseEvent) => void;
     private boundMouseMove: (e: MouseEvent) => void;
+    private boundDblClick: (e: MouseEvent) => void;
     private boundMessage: (event: MessageEvent) => void;
     private boundWheel: (e: WheelEvent) => void;
     private boundKeyDown: (e: KeyboardEvent) => void;
@@ -150,6 +160,7 @@ export class Game {
         this.boundMouseDown = this.handleMouseDown.bind(this);
         this.boundMouseUp = this.handleMouseUp.bind(this);
         this.boundMouseMove = this.handleMouseMove.bind(this);
+        this.boundDblClick = this.handleDblClick.bind(this);
         this.boundMessage = this.handleMessage.bind(this);
         this.boundWheel = this.handleWheel.bind(this);
         this.boundKeyDown = this.handleKeyDown.bind(this);
@@ -165,6 +176,7 @@ export class Game {
         this.canvas.removeEventListener("mousedown", this.boundMouseDown);
         this.canvas.removeEventListener("mouseup", this.boundMouseUp);
         this.canvas.removeEventListener("mousemove", this.boundMouseMove);
+        this.canvas.removeEventListener("dblclick", this.boundDblClick);
         this.canvas.removeEventListener("wheel", this.boundWheel);
         this.canvas.removeEventListener("contextmenu", this.boundContextMenu);
         window.removeEventListener("keydown", this.boundKeyDown);
@@ -181,8 +193,14 @@ export class Game {
         this.updateCursor();
     }
 
-    setTextClickHandler(handler: ((x: number, y: number) => void) | null) {
+    setTextClickHandler(handler: ((canvasX: number, canvasY: number, screenX: number, screenY: number, editingShape?: Shape) => void) | null) {
         this.onTextClick = handler;
+    }
+
+    cancelEdit(shape: Shape) {
+        this.pushUndo();
+        this.existingShapes.push(shape);
+        this.render();
     }
 
     setImageClickHandler(handler: (() => void) | null) {
@@ -271,6 +289,7 @@ export class Game {
         this.canvas.addEventListener("mousedown", this.boundMouseDown);
         this.canvas.addEventListener("mouseup", this.boundMouseUp);
         this.canvas.addEventListener("mousemove", this.boundMouseMove);
+        this.canvas.addEventListener("dblclick", this.boundDblClick);
         this.canvas.addEventListener("wheel", this.boundWheel, { passive: false });
         this.canvas.addEventListener("contextmenu", this.boundContextMenu);
         window.addEventListener("keydown", this.boundKeyDown);
@@ -380,7 +399,7 @@ export class Game {
                 this.drawPencil(getSafePencilPoints(shape), isSelected);
                 break;
             case "text":
-                this.drawText(shape.x, shape.y, shape.text, shape.fontSize, isSelected);
+                this.drawText(shape.x, shape.y, shape.text, shape.fontSize, isSelected, shape.strokeColor);
                 break;
             case "image":
                 this.drawImage(shape.x, shape.y, shape.width, shape.height, shape.src, isSelected);
@@ -460,9 +479,9 @@ export class Game {
         }
     }
 
-    private drawText(x: number, y: number, text: string, fontSize: number, isSelected: boolean) {
+    private drawText(x: number, y: number, text: string, fontSize: number, isSelected: boolean, shapeStrokeColor?: string) {
         this.ctx.font = fontSize + 'px "Caveat","Virgil","Segoe UI Emoji",sans-serif';
-        this.ctx.fillStyle = this.strokeColor;
+        this.ctx.fillStyle = shapeStrokeColor || this.strokeColor;
         this.ctx.textBaseline = "alphabetic";
         this.ctx.fillText(text, x, y);
         if (isSelected) {
@@ -614,6 +633,7 @@ export class Game {
                     this.resizeStart = {
                         x: pos.x, y: pos.y, shapeX: sx, shapeY: sy,
                         shapeW: (hit as any).width ?? 0, shapeH: (hit as any).height ?? 0,
+                        shapeFontSize: hit.type === "text" ? (hit as any).fontSize ?? 32 : 0,
                         centerX: hit.type === "circle" ? hit.centerX : 0,
                         centerY: hit.type === "circle" ? hit.centerY : 0,
                         radius: hit.type === "circle" ? hit.radius : 0,
@@ -639,7 +659,11 @@ export class Game {
             return;
         }
         if (this.selectedTool === "text") {
-            this.onTextClick?.(pos.x, pos.y);
+            e.preventDefault();
+            const rect = this.canvas.getBoundingClientRect();
+            const screenX = pos.x * this.zoom + this.panOffset.x + rect.left;
+            const screenY = pos.y * this.zoom + this.panOffset.y + rect.top;
+            this.onTextClick?.(pos.x, pos.y, screenX, screenY);
             return;
         }
         if (this.selectedTool === "image") {
@@ -724,6 +748,28 @@ export class Game {
                 break;
         }
         this.ctx.restore();
+    }
+
+    private handleDblClick(e: MouseEvent) {
+        const usePan = this.isSpaceDown || this.selectedTool === "hand";
+        if (usePan) return;
+        if (e.button === 2) return;
+        const pos = this.getMousePos(e);
+        const hit = [...this.existingShapes].reverse().find((s) => this.hitTest(s, pos.x, pos.y));
+        if (hit && hit.type === "text" && hit.id) {
+            this.existingShapes = this.existingShapes.filter((s) => s.id !== hit.id);
+            this.render();
+            const rect = this.canvas.getBoundingClientRect();
+            const screenX = pos.x * this.zoom + this.panOffset.x + rect.left;
+            const screenY = pos.y * this.zoom + this.panOffset.y + rect.top;
+            this.onTextClick?.(hit.x, hit.y, screenX, screenY, hit);
+        } else if (!hit) {
+            e.preventDefault();
+            const rect = this.canvas.getBoundingClientRect();
+            const screenX = pos.x * this.zoom + this.panOffset.x + rect.left;
+            const screenY = pos.y * this.zoom + this.panOffset.y + rect.top;
+            this.onTextClick?.(pos.x, pos.y, screenX, screenY);
+        }
     }
 
     private handleMouseUp(e: MouseEvent) {
@@ -823,6 +869,10 @@ export class Game {
                 if (this.activeHandle === "nc") shape.y = rs.shapeY + dy;
                 shape.height = this.activeHandle === "sc" ? rs.shapeH + dy * 2 : rs.shapeH - dy * 2;
             }
+        } else if (shape.type === "text") {
+            const dist = Math.hypot(dx, dy);
+            const scale = 1 + (dist * (dx > 0 || dy > 0 ? 1 : -1)) / 50;
+            shape.fontSize = Math.max(8, Math.round(rs.shapeFontSize * scale));
         }
     }
 
