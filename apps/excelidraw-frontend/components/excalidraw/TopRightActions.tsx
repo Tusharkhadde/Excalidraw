@@ -6,15 +6,17 @@ import {
   Image as ImageIcon,
   PanelRight,
   Share2,
-  Sparkles,
   Trash2,
 } from "lucide-react";
 import type { Shape } from "./types";
+import { InviteMembersDialog } from "./InviteMembersDialog";
 
 interface TopRightActionsProps {
   shapes: Shape[];
   onClear?: () => void;
   isGuest?: boolean;
+  roomId?: string;
+  isDark?: boolean;
 }
 
 function exportToSvg(shapes: Shape[]): string {
@@ -59,7 +61,7 @@ function exportToSvg(shapes: Shape[]): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">${shapeMarkup}</svg>`;
 }
 
-export function TopRightActions({ shapes, onClear, isGuest = false }: TopRightActionsProps) {
+export function TopRightActions({ shapes, onClear, isGuest = false, roomId = "", isDark = false }: TopRightActionsProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -159,10 +161,7 @@ export function TopRightActions({ shapes, onClear, isGuest = false }: TopRightAc
 
   return (
     <div className="flex items-center gap-3">
-      <button className="inline-flex h-[52px] items-center gap-1.5 rounded-2xl border border-[#e8e6f2] bg-[#f2f0fb] px-5 text-sm font-medium text-[#3b3f4d] shadow-[0_12px_28px_-22px_rgba(16,24,40,0.5)] transition-all hover:bg-[#ece8fb]">
-        <Sparkles className="h-4 w-4 text-[#6d63da]" />
-        <span>Excalidraw+</span>
-      </button>
+      <InviteMembersDialog roomId={roomId} isDark={isDark} />
 
       <button
         onClick={handleShare}
