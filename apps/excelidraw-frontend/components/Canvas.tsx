@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Command, HelpCircle, ShieldCheck, X } from "lucide-react";
+import { Command, HelpCircle, X } from "lucide-react";
 import { Game, preloadImage } from "@/draw/Game";
 import { HamburgerMenu } from "./excalidraw/HamburgerMenu";
 import { TopRightActions } from "./excalidraw/TopRightActions";
 import { TopToolbar } from "./excalidraw/TopToolbar";
+import { ChatPanel } from "./excalidraw/ChatPanel";
+import { useAuth } from "@/lib/auth";
 import {
   ColorPicker,
   ColorPickerSelection,
@@ -36,7 +38,9 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const selectedToolRef = useRef<Tool>("selection");
+  const committedRef = useRef(false);
 
   const [game, setGame] = useState<Game | null>(null);
   const [selectedTool, setSelectedTool] = useState<Tool>("selection");
@@ -44,7 +48,7 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
   const [locked, setLocked] = useState(false);
   const [shapes, setShapes] = useState<Shape[]>([]);
   const [showHint, setShowHint] = useState(true);
-  const [textInput, setTextInput] = useState<{ x: number; y: number; value: string } | null>(null);
+  const [textInput, setTextInput] = useState<{ canvasX: number; canvasY: number; screenX: number; screenY: number; editingShape?: Shape } | null>(null);
   const [zoom, setZoom] = useState(1);
   const [isDark, setIsDark] = useState(false);
   const [gridEnabled, setGridEnabled] = useState(false);
@@ -53,6 +57,7 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
   const [strokeColor, setStrokeColor] = useState("#1e1e1e");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [fillColor, setFillColor] = useState("transparent");
+  const { user } = useAuth();
 
   const themeMode = isDark ? "dark" : "light";
 
@@ -64,21 +69,6 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
       if (e.key === "?") {
         e.preventDefault();
         setShowShortcuts((prev) => !prev);
-      }
-
-      if (e.key === "g" || e.key === "G") {
-        e.preventDefault();
-        if (!e.shiftKey) {
-          setGridEnabled((prev) => {
-            setDotsEnabled(false);
-            return !prev;
-          });
-        } else {
-          setDotsEnabled((prev) => {
-            setGridEnabled(false);
-            return !prev;
-          });
-        }
       }
     }
 
@@ -121,6 +111,12 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
   }, [shapes.length]);
 
   useEffect(() => {
+    if (textInput) {
+      requestAnimationFrame(() => textAreaRef.current?.focus());
+    }
+  }, [textInput]);
+
+  useEffect(() => {
     selectedToolRef.current = selectedTool;
   }, [selectedTool]);
 
@@ -143,8 +139,9 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
     setGame(nextGame);
 
     nextGame.setTool(selectedToolRef.current);
-    nextGame.setTextClickHandler((x, y) => {
-      setTextInput({ x, y, value: "" });
+    nextGame.setTextClickHandler((canvasX, canvasY, screenX, screenY, editingShape) => {
+      committedRef.current = false;
+      setTextInput({ canvasX, canvasY, screenX, screenY, editingShape });
     });
     nextGame.setImageClickHandler(() => {
       fileInputRef.current?.click();
@@ -177,24 +174,29 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
   }, [game, socket, roomId]);
 
   const commitText = () => {
-    if (!textInput || !textInput.value.trim() || !game) {
+    if (committedRef.current) return;
+    const value = textAreaRef.current?.value ?? "";
+    if (!textInput || !value.trim() || !game) {
       setTextInput(null);
       return;
     }
 
+    committedRef.current = true;
+    const editing = textInput.editingShape;
+    const editingFont = editing?.type === "text" ? editing.fontSize : undefined;
     const shape: Shape = {
       type: "text",
-      id: `shape_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
-      x: textInput.x,
-      y: textInput.y,
-      text: textInput.value,
-      fontSize: 20,
-      strokeColor: isDark ? "#ffffff" : "#1e1e1e",
+      id: editing ? editing.id : `shape_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+      x: textInput.canvasX,
+      y: textInput.canvasY,
+      text: value,
+      fontSize: editingFont ?? 32,
+      strokeColor: isDark ? "#ffffff" : (strokeColor || "#1e1e1e"),
       strokeWidth: 0,
     };
 
     game.addShape(shape);
-    socket.send(JSON.stringify({ type: "draw", roomId, shape }));
+    socket.send(JSON.stringify({ type: editing ? "update" : "draw", roomId, shape }));
     setTextInput(null);
   };
 
@@ -263,18 +265,6 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
   const canvasBg = isDark ? "#1a1a2e" : "#ffffff";
 
   const shortcuts = [
-    { keys: ["V"], desc: "Select tool" },
-    { keys: ["H"], desc: "Hand tool" },
-    { keys: ["P"], desc: "Pencil tool" },
-    { keys: ["R"], desc: "Rectangle" },
-    { keys: ["D"], desc: "Diamond" },
-    { keys: ["O"], desc: "Circle" },
-    { keys: ["A"], desc: "Arrow" },
-    { keys: ["L"], desc: "Line" },
-    { keys: ["T"], desc: "Text tool" },
-    { keys: ["I"], desc: "Insert image" },
-    { keys: ["E"], desc: "Eraser" },
-    { keys: ["G"], desc: "Toggle grid/dots" },
     { keys: [<Command key="cmd" className="inline h-3 w-3" />, "+"], desc: "Zoom in" },
     { keys: [<Command key="cmd" className="inline h-3 w-3" />, "-"], desc: "Zoom out" },
     { keys: [<Command key="cmd" className="inline h-3 w-3" />, "0"], desc: "Reset zoom" },
@@ -350,7 +340,7 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
         </div>
 
         <div className="flex-shrink-0 pointer-events-auto">
-          <TopRightActions shapes={shapes} onClear={handleClearCanvas} isGuest={isGuest} />
+          <TopRightActions shapes={shapes} onClear={handleClearCanvas} isGuest={isGuest} roomId={roomId} isDark={isDark} />
         </div>
       </div>
 
@@ -379,26 +369,28 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
 
       {textInput && (
         <textarea
+          ref={textAreaRef}
           autoFocus
-          value={textInput.value}
-          onChange={(e) => setTextInput({ ...textInput, value: e.target.value })}
+          defaultValue={textInput.editingShape?.type === "text" ? textInput.editingShape.text : ""}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
               commitText();
             } else if (e.key === "Escape") {
               e.preventDefault();
+              if (textInput.editingShape && game) {
+                game.cancelEdit(textInput.editingShape);
+              }
               setTextInput(null);
             }
           }}
           onBlur={commitText}
-          placeholder="Type something..."
-          className="absolute z-30 min-w-[140px] resize-none overflow-hidden rounded-none border-0 border-b-2 border-dashed border-blue-400 bg-transparent p-0 text-[20px] leading-tight outline-none placeholder:text-gray-300"
+          className="absolute z-30 min-w-[140px] resize-none overflow-hidden rounded-none border-0 border-b-2 border-dashed border-blue-400 bg-transparent p-0 text-[20px] leading-tight outline-none"
           style={{
-            left: textInput.x,
-            top: textInput.y - 26,
+            left: textInput.screenX,
+            top: textInput.screenY - 26,
             fontFamily: "Caveat, Virgil, Segoe UI Emoji, sans-serif",
-            fontSize: "20px",
+            fontSize: "32px",
             lineHeight: "1.2",
             color: textColor,
             background: isDark ? "rgba(0,0,0,0.3)" : "rgba(59,130,246,0.06)",
@@ -424,8 +416,8 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
         <span>{Math.round(zoom * 100)}%</span>
       </div>
 
-      <div className={`absolute bottom-5 right-24 z-20 flex h-10 w-10 items-center justify-center rounded-2xl ${isDark ? "bg-gray-900/80 text-[#8f87f0]" : "bg-white text-purple-600 shadow-lg shadow-gray-200/50"}`}>
-        <ShieldCheck className="h-5 w-5" strokeWidth={1.8} />
+      <div className="absolute bottom-5 right-24 z-20 flex items-center gap-2">
+        <ChatPanel socket={socket} roomId={roomId} isDark={isDark} currentUserId={user?.id} />
       </div>
 
       <button
