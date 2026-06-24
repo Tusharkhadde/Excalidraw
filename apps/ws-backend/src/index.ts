@@ -191,8 +191,14 @@ wss.on("connection", (ws, request) => {
                 return;
             }
 
+            let userName = "Guest";
             if (!client.isGuest && client.userId) {
                 try {
+                    const user = await prismaClient.user.findUnique({
+                        where: { id: client.userId },
+                        select: { name: true },
+                    });
+                    if (user) userName = user.name;
                     await prismaClient.chat.create({
                         data: {
                             roomId: Number(roomId),
@@ -204,7 +210,7 @@ wss.on("connection", (ws, request) => {
                 }
             }
 
-            broadcastToRoom(roomId, { type: "chat", roomId, message, userId: client.userId }, ws);
+            broadcastToRoom(roomId, { type: "chat", roomId, message, userId: client.userId, userName }, ws);
             return;
         }
 
