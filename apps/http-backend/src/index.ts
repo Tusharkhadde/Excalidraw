@@ -136,6 +136,29 @@ app.get("/rooms", middleware, async (req, res) => {
     res.json(rooms.map(r => ({ id: r.id, slug: r.slug, adminId: r.adminId, createdAt: r.createdAt.toISOString() })));
 });
 
+// ── User Search ─────────────────────────────────────────────
+
+app.get("/users/search", middleware, async (req, res) => {
+    const q = (req.query.q as string ?? "").trim();
+    if (!q) {
+        res.status(400).json({ message: "Query parameter 'q' is required" });
+        return;
+    }
+
+    const users = await prismaClient.user.findMany({
+        where: {
+            OR: [
+                { name: { contains: q, mode: "insensitive" } },
+                { email: { contains: q, mode: "insensitive" } },
+            ],
+        },
+        select: { id: true, email: true, name: true, photo: true },
+        take: 20,
+    });
+
+    res.json({ users });
+});
+
 // ── Chats / Drawings ─────────────────────────────────────────
 
 app.get("/chats/:roomId", async (req, res) => {
