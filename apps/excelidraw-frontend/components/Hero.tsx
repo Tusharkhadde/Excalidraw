@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Download, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { Button } from "@/components/ui/button";
 import { GsapReveal } from "@/components/ui/gsap-reveal";
@@ -50,9 +50,8 @@ export default function Hero() {
                 </Link>
               </Button>
               <Button asChild variant="outline" size="xl" className="bg-white text-slate-900 border-slate-200 hover:bg-slate-50 shrink-0">
-                <Link href="#open-source">
-                  <Download className="h-4 w-4" />
-                  Self-host Excelidraw
+                <Link href="/canvas/guest">
+                  Try It Free
                 </Link>
               </Button>
             </div>
