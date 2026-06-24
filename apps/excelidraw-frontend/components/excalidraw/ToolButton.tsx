@@ -6,7 +6,6 @@ import { type LucideIcon } from "lucide-react";
 interface ToolButtonProps {
   icon: LucideIcon;
   label: string;
-  shortcut?: string;
   order?: string;
   active?: boolean;
   onClick?: () => void;
@@ -16,7 +15,6 @@ interface ToolButtonProps {
 export function ToolButton({
   icon: Icon,
   label,
-  shortcut,
   order,
   active,
   onClick,
@@ -32,15 +30,9 @@ export function ToolButton({
           : "bg-transparent text-[#2f3342] hover:bg-[#f5f4fb]",
         className
       )}
-      title={`${label}${shortcut ? ` (${shortcut})` : ""}`}
       aria-label={label}
     >
       <Icon className="h-[20px] w-[20px]" strokeWidth={1.7} />
-      {(order || shortcut) && (
-        <span className="absolute bottom-[6px] right-[8px] text-[11px] font-medium leading-none text-[#8a8ea3]">
-          {order || shortcut}
-        </span>
-      )}
     </button>
   );
 }
