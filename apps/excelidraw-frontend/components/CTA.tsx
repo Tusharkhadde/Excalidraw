@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Server, Zap } from "lucide-react";
+import { Zap } from "lucide-react";
 import { LazySection } from "@/components/ui/lazy-section";
 import { Button } from "@/components/ui/button";
 import { GsapReveal } from "@/components/ui/gsap-reveal";
@@ -62,9 +62,8 @@ export default function CTA() {
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="xl" className="border-slate-200 hover:bg-slate-50">
-                  <Link href="#open-source">
-                    <Server className="h-4 w-4" />
-                    Explore Self-hosting
+                  <Link href="/canvas/guest">
+                    Try It Free
                   </Link>
                 </Button>
               </div>
