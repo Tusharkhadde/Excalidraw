@@ -19,18 +19,18 @@ import { ToolButton } from "./ToolButton";
 import type { ToolConfig } from "./types";
 
 const baseTools: ToolConfig[] = [
-  { id: "lock", icon: Lock, label: "Lock", shortcut: "Q" },
-  { id: "hand", icon: Hand, label: "Hand", shortcut: "H" },
-  { id: "selection", icon: MousePointer2, label: "Select", shortcut: "V" },
-  { id: "rectangle", icon: RectangleHorizontal, label: "Rectangle", shortcut: "R" },
-  { id: "diamond", icon: Diamond, label: "Diamond", shortcut: "D" },
-  { id: "circle", icon: Circle, label: "Circle", shortcut: "O" },
-  { id: "arrow", icon: ArrowRight, label: "Arrow", shortcut: "A" },
-  { id: "line", icon: Minus, label: "Line", shortcut: "L" },
-  { id: "pencil", icon: Pencil, label: "Pencil", shortcut: "P" },
-  { id: "text", icon: Type, label: "Text", shortcut: "T" },
-  { id: "image", icon: ImageIcon, label: "Image", shortcut: "I" },
-  { id: "eraser", icon: Eraser, label: "Eraser", shortcut: "E" },
+  { id: "lock", icon: Lock, label: "Lock" },
+  { id: "hand", icon: Hand, label: "Hand" },
+  { id: "selection", icon: MousePointer2, label: "Select" },
+  { id: "rectangle", icon: RectangleHorizontal, label: "Rectangle" },
+  { id: "diamond", icon: Diamond, label: "Diamond" },
+  { id: "circle", icon: Circle, label: "Circle" },
+  { id: "arrow", icon: ArrowRight, label: "Arrow" },
+  { id: "line", icon: Minus, label: "Line" },
+  { id: "pencil", icon: Pencil, label: "Pencil" },
+  { id: "text", icon: Type, label: "Text" },
+  { id: "image", icon: ImageIcon, label: "Image" },
+  { id: "eraser", icon: Eraser, label: "Eraser" },
 ];
 
 interface TopToolbarProps {
@@ -59,7 +59,6 @@ export function TopToolbar({ activeTool = "selection", onToolChange }: TopToolba
             <ToolButton
               icon={tool.icon}
               label={tool.label}
-              shortcut={tool.shortcut}
               order={String((index + 1) % 10)}
               active={currentActive === tool.id}
               onClick={() => handleClick(tool.id)}
