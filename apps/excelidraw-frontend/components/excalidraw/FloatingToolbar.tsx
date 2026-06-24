@@ -38,13 +38,13 @@ interface FloatingToolbarProps {
 }
 
 const tools: ToolConfig[] = [
-  { id: "selection", icon: MousePointer2, label: "Select", shortcut: "V" },
-  { id: "pencil", icon: Pencil, label: "Pencil", shortcut: "P" },
-  { id: "rectangle", icon: RectangleHorizontal, label: "Rectangle", shortcut: "R" },
-  { id: "circle", icon: Circle, label: "Circle", shortcut: "O" },
-  { id: "line", icon: Minus, label: "Line", shortcut: "L" },
-  { id: "text", icon: Type, label: "Text", shortcut: "T" },
-  { id: "eraser", icon: Eraser, label: "Eraser", shortcut: "E" },
+  { id: "selection", icon: MousePointer2, label: "Select" },
+  { id: "pencil", icon: Pencil, label: "Pencil" },
+  { id: "rectangle", icon: RectangleHorizontal, label: "Rectangle" },
+  { id: "circle", icon: Circle, label: "Circle" },
+  { id: "line", icon: Minus, label: "Line" },
+  { id: "text", icon: Type, label: "Text" },
+  { id: "eraser", icon: Eraser, label: "Eraser" },
 ];
 
 const panelClassName =
@@ -90,7 +90,6 @@ export function FloatingToolbar({
                 key={tool.id}
                 icon={tool.icon}
                 label={tool.label}
-                shortcut={tool.shortcut}
                 active={activeTool === tool.id}
                 onClick={() => handleClick(tool.id)}
                 className="tool-btn"
@@ -141,7 +140,6 @@ export function FloatingToolbar({
             >
               <Grid className="h-4 w-4" />
               <span className="text-sm font-medium">Background</span>
-              <span className="ml-auto text-[11px] font-semibold tracking-[0.14em] text-slate-400 dark:text-slate-500">G</span>
             </button>
 
             {showBgOptions && (
