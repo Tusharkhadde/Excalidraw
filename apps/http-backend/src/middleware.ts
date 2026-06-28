@@ -9,14 +9,14 @@ declare global {
     }
 }
 
-export function middleware(req: Request, res: Response, next: NextFunction) {
+export async function middleware(req: Request, res: Response, next: NextFunction) {
     const authHeader = req.headers["authorization"];
     if (!authHeader) {
         res.status(401).json({ message: "Missing authorization header" });
         return;
     }
 
-    const payload = verifyJwt(authHeader);
+    const payload = await verifyJwt(authHeader);
     if (!payload) {
         res.status(401).json({ message: "Invalid or expired token" });
         return;

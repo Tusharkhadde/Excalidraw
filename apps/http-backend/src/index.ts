@@ -1,5 +1,5 @@
 import express from "express";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { middleware } from "./middleware";
 import { CreateUserSchema, SigninSchema, CreateRoomSchema } from "@repo/common/types";
 import { signJwt } from "@repo/backend-common/config";
@@ -76,7 +76,7 @@ app.post("/signin", async (req, res) => {
         });
     }
 
-    const token = signJwt(user.id);
+    const token = await signJwt(user.id);
     res.json({ token });
 });
 

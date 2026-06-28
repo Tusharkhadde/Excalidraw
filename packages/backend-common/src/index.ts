@@ -1,21 +1,24 @@
-import jwt from "jsonwebtoken";
+import { SignJWT, jwtVerify } from "jose";
 
 export const JWT_SECRET: string = process.env.JWT_SECRET || "dev-secret-change-in-production";
+const secret = new TextEncoder().encode(JWT_SECRET);
 
 export interface JwtPayload {
     userId: string;
 }
 
-export function signJwt(userId: string): string {
-    return jwt.sign({ userId }, JWT_SECRET, { expiresIn: "7d" });
+export async function signJwt(userId: string): Promise<string> {
+    return new SignJWT({ userId })
+        .setProtectedHeader({ alg: "HS256" })
+        .setExpirationTime("7d")
+        .sign(secret);
 }
 
-export function verifyJwt(token: string): JwtPayload | null {
+export async function verifyJwt(token: string): Promise<JwtPayload | null> {
     try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        if (typeof decoded === "string") return null;
-        if (!decoded || typeof decoded.userId !== "string") return null;
-        return { userId: decoded.userId };
+        const { payload } = await jwtVerify(token, secret);
+        if (typeof payload.userId !== "string") return null;
+        return { userId: payload.userId };
     } catch {
         return null;
     }

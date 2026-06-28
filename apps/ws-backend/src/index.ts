@@ -36,7 +36,7 @@ function generateGuestId(): string {
     return `guest_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
-wss.on("connection", (ws, request) => {
+wss.on("connection", async (ws, request) => {
     const url = request.url ?? "";
     const queryString = url.includes("?") ? url.split("?")[1] ?? "" : "";
     const params = new URLSearchParams(queryString);
@@ -50,7 +50,7 @@ wss.on("connection", (ws, request) => {
         clientIsGuest = true;
         userId = generateGuestId();
     } else {
-        const payload = verifyJwt(token);
+        const payload = await verifyJwt(token);
         if (!payload) {
             ws.close(4001, "Unauthorized");
             return;
