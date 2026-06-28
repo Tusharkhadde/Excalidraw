@@ -2,7 +2,8 @@ import { WebSocket, WebSocketServer } from "ws";
 import { verifyJwt } from "@repo/backend-common/config";
 import { prismaClient } from "@repo/db/client";
 
-const wss = new WebSocketServer({ port: 8080 });
+const PORT = Number(process.env.PORT) || 8080;
+const wss = new WebSocketServer({ port: PORT });
 
 interface ConnectedClient {
     ws: WebSocket;
@@ -221,4 +222,4 @@ wss.on("connection", (ws, request) => {
     ws.on("error", () => removeClient(ws));
 });
 
-console.log("WS backend listening on port 8080");
+console.log(`WS backend listening on port ${PORT}`);
