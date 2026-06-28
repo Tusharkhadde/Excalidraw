@@ -46,7 +46,7 @@ export default function Testimonials() {
             </GsapReveal>
             <GsapReveal direction="up" distance={20} delay={0.1}>
               <p className="text-lg text-slate-600">
-                Don't just take our word for it. Here's what professionals have to say about their experience.
+                Don&apos;t just take our word for it. Here&apos;s what professionals have to say about their experience.
               </p>
             </GsapReveal>
           </div>
@@ -70,7 +70,7 @@ export default function Testimonials() {
                     <Quote className="absolute top-8 right-8 w-10 h-10 text-slate-100 -z-10 group-hover:text-indigo-50 transition-colors" />
 
                     <p className="text-slate-700 leading-relaxed mb-8 flex-grow">
-                      "{t.content}"
+                      &ldquo;{t.content}&rdquo;
                     </p>
 
                     <div className="flex items-center gap-4 mt-auto">

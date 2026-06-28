@@ -51,11 +51,10 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
   const [textInput, setTextInput] = useState<{ canvasX: number; canvasY: number; screenX: number; screenY: number; editingShape?: Shape } | null>(null);
   const [zoom, setZoom] = useState(1);
   const [isDark, setIsDark] = useState(false);
-  const [gridEnabled, setGridEnabled] = useState(false);
-  const [dotsEnabled, setDotsEnabled] = useState(false);
+  const [gridEnabled] = useState(false);
+  const [dotsEnabled] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [strokeColor, setStrokeColor] = useState("#1e1e1e");
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [fillColor, setFillColor] = useState("transparent");
   const { user } = useAuth();
 

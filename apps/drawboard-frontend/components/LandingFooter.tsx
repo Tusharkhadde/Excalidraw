@@ -78,7 +78,7 @@ export default function LandingFooter() {
                 <PenTool className="h-4.5 w-4.5 text-white transform -rotate-45" />
               </div>
               <span className="text-lg font-bold tracking-tight text-slate-900">
-                Excelidraw
+                Drawboard
               </span>
             </Link>
             <p className="max-w-xs text-sm leading-relaxed text-slate-500">
@@ -137,7 +137,7 @@ export default function LandingFooter() {
         {/* Bottom bar */}
         <div className="flex flex-col items-center justify-between gap-6 border-t border-slate-200/60 py-8 text-sm text-slate-500 md:flex-row">
           <span>
-            &copy; {new Date().getFullYear()} Excelidraw. Open source under the
+            &copy; {new Date().getFullYear()} Drawboard. Open source under the
             MIT License.
           </span>
           

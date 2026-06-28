@@ -228,7 +228,7 @@ export default function LiveDemo() {
                     <div className="h-3.5 w-3.5 rounded-full bg-[#10B981]/90" />
                   </div>
                   <div className="h-6 w-56 rounded-md bg-white border border-slate-200/50 text-center text-[11px] text-slate-500 flex items-center justify-center font-medium shadow-sm">
-                    excelidraw.com/demo/{slides[active].title.toLowerCase().replace(/\s+/g, "-")}
+                    drawboard.app/demo/{slides[active].title.toLowerCase().replace(/\s+/g, "-")}
                   </div>
                   <Link
                     href="/canvas/guest"

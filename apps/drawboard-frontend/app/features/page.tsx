@@ -76,7 +76,7 @@ const features = [
     icon: Smartphone,
     title: "Works Everywhere",
     description:
-      "Desktop, tablet, or mobile. Excelidraw works on any device with a modern browser.",
+       "Desktop, tablet, or mobile. Drawboard works on any device with a modern browser.",
     color: "teal",
   },
 ];
@@ -162,7 +162,7 @@ export default function FeaturesPage() {
               Ready to start creating?
             </h2>
             <p className="text-lg text-gray-500 mb-8">
-              Join thousands of teams who use Excelidraw every day.
+              Join thousands of teams who use Drawboard every day.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link

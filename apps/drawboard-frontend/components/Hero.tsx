@@ -38,7 +38,7 @@ export default function Hero() {
             </h1>
 
             <p className="max-w-xl text-lg text-slate-500 leading-relaxed">
-              Excelidraw is a real-time collaborative whiteboard that just works.
+              Drawboard is a real-time collaborative whiteboard that just works.
               Create a room, share a link, and start drawing with your team instantly.
             </p>
 
@@ -104,7 +104,7 @@ export default function Hero() {
                       <div className="h-3 w-3 rounded-full bg-[#10B981]" />
                     </div>
                     <div className="h-5 w-44 rounded bg-white shadow-sm text-center text-[10px] text-slate-500 flex items-center justify-center font-medium">
-                      excelidraw.com/room/project-planning
+                      drawboard.app/room/project-planning
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-1 rounded bg-indigo-600 px-2 py-0.5 text-[10px] font-semibold text-white shadow-sm">
@@ -117,7 +117,7 @@ export default function Hero() {
                   <div className="relative aspect-[16/11] w-full overflow-hidden bg-white">
                     <img
                       src="/whiteboard_hero.png"
-                      alt="Excelidraw collaborative whiteboard application view"
+                       alt="Drawboard collaborative whiteboard application view"
                       className="w-full h-full object-cover"
                     />
                   </div>

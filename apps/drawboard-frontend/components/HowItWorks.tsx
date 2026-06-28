@@ -69,7 +69,7 @@ export default function HowItWorks() {
             
             <GsapReveal direction="up" distance={20} delay={0.2}>
               <p className="text-lg text-slate-600 leading-relaxed">
-                We've stripped away the complexity. No downloads, no mandatory accounts, just instant access to a shared canvas.
+                We&apos;ve stripped away the complexity. No downloads, no mandatory accounts, just instant access to a shared canvas.
               </p>
             </GsapReveal>
           </div>
@@ -79,7 +79,7 @@ export default function HowItWorks() {
             <div className="hidden md:block absolute top-[5.5rem] left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-200 to-transparent z-0" />
 
             <GsapReveal stagger="children" staggerAmount={0.3} direction="up" distance={40} triggerHook="top 80%" className="grid grid-cols-1 md:grid-cols-3 gap-16 md:gap-12 relative z-10">
-              {steps.map((step, index) => (
+              {steps.map((step) => (
                 <div key={step.number} className="group relative mt-6 md:mt-0">
                   
                   {/* Animated Gradient Border (Lighting) */}

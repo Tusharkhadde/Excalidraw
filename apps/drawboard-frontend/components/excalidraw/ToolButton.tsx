@@ -15,7 +15,6 @@ interface ToolButtonProps {
 export function ToolButton({
   icon: Icon,
   label,
-  order,
   active,
   onClick,
   className,

@@ -3,7 +3,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "Excelidraw — Collaborative Whiteboarding",
+  title: "Drawboard — Collaborative Whiteboarding",
   description: "Create, collaborate, and share beautiful diagrams and sketches in real-time.",
 };
 

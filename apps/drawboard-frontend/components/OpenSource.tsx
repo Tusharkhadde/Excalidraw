@@ -40,7 +40,7 @@ export default function OpenSource() {
                     Open source by <span className="text-red-500">❤️</span>
                   </h3>
                   <p className="text-sm text-slate-300 max-w-xl leading-relaxed">
-                    Excelidraw is 100% open source and built for the community.
+                    Drawboard is 100% open source and built for the community.
                     Star us on GitHub and help us build the best whiteboard for everyone.
                   </p>
                   

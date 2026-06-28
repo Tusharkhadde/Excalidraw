@@ -14,7 +14,7 @@ export default function AboutPage() {
         <section className="py-20">
           <div className="mx-auto max-w-[1200px] px-6 text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-1.5 text-sm text-gray-600 shadow-sm mb-8">
-              About Excelidraw
+              About Drawboard
             </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-gray-900 mb-6">
               We believe drawing
@@ -25,7 +25,7 @@ export default function AboutPage() {
               </span>
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-gray-500 mb-10">
-              Excelidraw was built to make real-time collaboration simple and accessible.
+              Drawboard was built to make real-time collaboration simple and accessible.
               No downloads, no accounts required — just open and draw together.
             </p>
           </div>
@@ -85,7 +85,7 @@ export default function AboutPage() {
               Ready to get started?
             </h2>
             <p className="text-lg text-gray-500 mb-8">
-              Join thousands of teams who use Excelidraw every day.
+              Join thousands of teams who use Drawboard every day.
             </p>
             <Link
               href="/canvas/guest"

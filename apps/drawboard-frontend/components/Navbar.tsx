@@ -14,17 +14,17 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 text-slate-800 transition-colors">
-      <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 h-20">
-        <Link href="/" className="flex items-center gap-2.5 hover:opacity-90 transition-opacity">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-md shadow-indigo-500/20">
-            <PenTool className="h-5 w-5 text-white transform -rotate-45" />
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-200 text-slate-800 transition-colors shadow-sm">
+      <div className="mx-auto flex max-w-[1280px] items-center justify-between px-10 h-20">
+        <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30">
+            <PenTool className="h-6 w-6 text-white transform -rotate-45" />
           </div>
-          <span className="text-xl font-bold tracking-tight text-slate-900">Excelidraw</span>
+          <span className="text-2xl font-extrabold tracking-tight text-slate-900">Drawboard</span>
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-10">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -34,11 +34,11 @@ export function Navbar() {
               {link.label}
             </Link>
           ))}
-          <Link href="#" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+          <Link href="#" className="text-base font-medium text-slate-600 hover:text-slate-900 transition-colors">
             Docs
           </Link>
 
-          <div className="flex items-center gap-4 pl-4 border-l border-slate-100 shrink-0">
+          <div className="flex items-center gap-4 pl-8 border-l border-slate-200 shrink-0">
             {token ? (
               <div className="flex items-center gap-3 shrink-0">
                 <Button asChild variant="secondary" size="sm" className="shrink-0 min-w-max shadow-sm hover:shadow-md transition-all">
@@ -55,14 +55,14 @@ export function Navbar() {
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center gap-3 shrink-0">
-                <Button asChild variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900 hover:bg-slate-50 shrink-0 min-w-max font-medium">
+              <div className="flex items-center gap-4 shrink-0">
+                <Button asChild variant="ghost" size="default" className="text-base text-slate-600 hover:text-slate-900 hover:bg-slate-50 shrink-0 min-w-max font-medium px-5">
                   <Link href="/signin">
                     Log in
                   </Link>
                 </Button>
-                <Button asChild variant="primary" size="sm" className="shrink-0 min-w-max bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white shadow-md shadow-indigo-500/20 border-0 rounded-xl px-4 font-semibold transition-all hover:scale-105 active:scale-95">
-                  <Link href="/signup">Get Started</Link>
+                <Button asChild variant="primary" size="default" className="shrink-0 min-w-max bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold text-base shadow-lg shadow-indigo-500/30 border-0 rounded-full px-7 py-2.5 transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-xl hover:shadow-indigo-500/40">
+                  <Link href="/signup">Get Started →</Link>
                 </Button>
               </div>
             )}

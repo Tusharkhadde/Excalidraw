@@ -72,7 +72,7 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
             <path d="M 256 256 L 128 256 L 0 128 L 128 128 Z M 256 128 L 128 128 L 0 0 L 128 0 Z" fill="#7c3aed"/>
           </svg>
           <span className="text-xl font-bold tracking-tight text-gray-900">
-            Excelidraw
+            Drawboard
           </span>
         </Link>
 
