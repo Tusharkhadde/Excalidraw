@@ -1,11 +1,7 @@
 import type { NextConfig } from "next";
-import path from "path";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  // Fix pnpm monorepo standalone tracing so Next's internal modules
-  // (e.g. get-network-host) are correctly included in the build output.
-  outputFileTracingRoot: path.join(__dirname, "../../"),
   images: {
     remotePatterns: [
       {
