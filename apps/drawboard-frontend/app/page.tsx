@@ -32,7 +32,7 @@ interface Room {
 
 function LandingHero() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="landing-page min-h-screen bg-white text-black">
       <Navbar />
       <Hero />
       <Features />
