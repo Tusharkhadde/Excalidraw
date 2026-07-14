@@ -50,7 +50,7 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
   const [showHint, setShowHint] = useState(true);
   const [textInput, setTextInput] = useState<{ canvasX: number; canvasY: number; screenX: number; screenY: number; editingShape?: Shape } | null>(null);
   const [zoom, setZoom] = useState(1);
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true);
   const [gridEnabled] = useState(false);
   const [dotsEnabled] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -88,7 +88,7 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add("dark");
-      game?.setCanvasBg("#1a1a2e");
+      game?.setCanvasBg("#090a0c");
     } else {
       document.documentElement.classList.remove("dark");
       game?.setCanvasBg("#ffffff");
@@ -253,7 +253,7 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
   );
 
   const bgClass = isDark
-    ? "bg-[#1a1a2e]"
+    ? "bg-[#090a0c]"
     : gridEnabled
       ? "canvas-grid"
       : dotsEnabled
@@ -261,7 +261,7 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
         : "bg-[#fcfbff]";
 
   const textColor = isDark ? "#ffffff" : "#1e1e1e";
-  const canvasBg = isDark ? "#1a1a2e" : "#ffffff";
+  const canvasBg = isDark ? "#090a0c" : "#ffffff";
 
   const shortcuts = [
     { keys: [<Command key="cmd" className="inline h-3 w-3" />, "+"], desc: "Zoom in" },
@@ -304,7 +304,7 @@ export function Canvas({ roomId, socket, isGuest = false }: { socket: WebSocket;
         </div>
 
         <div className="absolute left-1/2 top-6 -translate-x-1/2 pointer-events-auto flex items-center gap-4">
-          <TopToolbar activeTool={selectedTool} onToolChange={handleToolChange} />
+          <TopToolbar activeTool={selectedTool} onToolChange={handleToolChange} isDark={isDark} />
           <div className="flex items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>

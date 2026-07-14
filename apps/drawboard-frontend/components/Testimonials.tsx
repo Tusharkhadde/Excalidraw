@@ -51,17 +51,17 @@ export default function Testimonials() {
             </GsapReveal>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <GsapReveal stagger="children" staggerAmount={0.3} direction="up" distance={40}>
+          <div className="w-full">
+            <GsapReveal className="grid w-full grid-cols-1 gap-6 md:grid-cols-3" stagger="children" staggerAmount={0.15} direction="up" distance={40}>
               {testimonials.map((t, i) => (
                 <div key={i} className="group relative">
                   {/* Consistent Glowing Border */}
                   <div className="absolute -inset-[2px] bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 rounded-[1.6rem] blur-[4px] opacity-0 group-hover:opacity-100 transition duration-500" />
                   <div className="absolute -inset-[2px] bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 rounded-[1.6rem] opacity-0 group-hover:opacity-20 transition duration-500" />
                   
-                  <div className="relative h-full flex flex-col p-8 bg-white border border-slate-200 rounded-3xl shadow-sm hover:-translate-y-0.5 transition-all duration-300">
+                  <div className="relative flex h-full min-h-[260px] flex-col rounded-2xl border border-black/10 bg-white p-6 shadow-none transition-all duration-300 hover:-translate-y-0.5 hover:border-black/30">
                     
-                    <div className="flex items-center gap-1 mb-6 text-amber-400">
+                    <div className="mb-5 flex items-center gap-1 text-black">
                       {[...Array(t.rating)].map((_, idx) => (
                         <Star key={idx} className="w-5 h-5 fill-current" />
                       ))}
@@ -69,7 +69,7 @@ export default function Testimonials() {
 
                     <Quote className="absolute top-8 right-8 w-10 h-10 text-slate-100 -z-10 group-hover:text-indigo-50 transition-colors" />
 
-                    <p className="text-slate-700 leading-relaxed mb-8 flex-grow">
+                    <p className="mb-7 flex-grow leading-relaxed text-neutral-600">
                       &ldquo;{t.content}&rdquo;
                     </p>
 

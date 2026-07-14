@@ -25,7 +25,7 @@ export function ToolButton({
       className={cn(
         "relative flex h-[52px] min-w-[54px] items-center justify-center rounded-2xl border border-transparent px-3 transition-all duration-150",
         active
-          ? "bg-[#ece9ff] text-[#5d5bd6] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+          ? "bg-cyan-400 text-[#061014] shadow-[0_0_24px_rgba(34,211,238,0.3)]"
           : "bg-transparent text-[#2f3342] hover:bg-[#f5f4fb]",
         className
       )}

@@ -5,23 +5,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Check,
   ChevronRight,
-  Command,
   Download,
-  ExternalLink,
-  FolderOpen,
-  Globe,
-  Heart,
   HelpCircle,
   Menu,
-  MessageCircle,
   Moon,
   RotateCcw,
   Save,
-  Search,
   Settings,
-  Sparkles,
   Sun,
-  UserPlus,
   Users,
   Palette,
   Droplet,
@@ -33,23 +24,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@repo/ui/popover";
 
 const menuGroups: MenuItem[][] = [
   [
-    { id: "open", icon: FolderOpen, label: "Open", shortcut: "Ctrl+O" },
     { id: "save-to", icon: Save, label: "Save to..." },
     { id: "export", icon: Download, label: "Export image...", shortcut: "Ctrl+Shift+E" },
-    { id: "live-collab", icon: Users, label: "Live collaboration..." },
+    { id: "live-collab", icon: Users, label: "Invite people..." },
   ],
   [
-    { id: "command-palette", icon: Command, label: "Command palette", shortcut: "Ctrl+/" },
-    { id: "find", icon: Search, label: "Find on canvas", shortcut: "Ctrl+F" },
     { id: "help", icon: HelpCircle, label: "Help", shortcut: "?" },
-    { id: "reset", icon: RotateCcw, label: "Reset the canvas" },
-  ],
-  [
-    { id: "excalidraw-plus", icon: Sparkles, label: "Excalidraw+" },
-    { id: "github", icon: ExternalLink, label: "GitHub" },
-    { id: "follow-us", icon: Heart, label: "Follow us" },
-    { id: "discord", icon: MessageCircle, label: "Discord chat" },
-    { id: "sign-up", icon: UserPlus, label: "Sign up" },
+    { id: "reset", icon: RotateCcw, label: "Reset board" },
   ],
 ];
 
@@ -72,7 +53,7 @@ export function HamburgerMenu({
   onStrokeColorChange,
   onFillColorChange,
 }: HamburgerMenuProps) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [language, setLanguage] = useState("English");
   const [langOpen, setLangOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -120,7 +101,7 @@ export function HamburgerMenu({
       <button
         ref={buttonRef}
         onClick={() => setOpen((current) => !current)}
-        className="flex h-[52px] w-[52px] items-center justify-center rounded-2xl border border-[#eceaf4] bg-[#f6f5fb] text-[#4c5160] transition-colors hover:bg-[#efedf7] hover:text-[#232734]"
+        className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-[#111318] text-zinc-300 shadow-[0_12px_30px_-18px_rgba(0,0,0,0.9)] transition-colors hover:bg-[#1a1d23] hover:text-white"
         aria-label="Menu"
       >
         <Menu className="h-5 w-5" />
@@ -134,7 +115,7 @@ export function HamburgerMenu({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.97 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute left-0 top-[calc(100%+10px)] z-50 min-w-[322px] origin-top-left overflow-visible rounded-[18px] border border-[#e8e6f2] bg-white py-2 shadow-[0_28px_80px_-34px_rgba(15,23,42,0.5)]"
+            className="absolute left-0 top-[calc(100%+8px)] z-50 w-[248px] origin-top-left overflow-visible rounded-2xl border border-white/10 bg-[#111318] py-2 text-zinc-200 shadow-[0_28px_80px_-24px_rgba(0,0,0,0.85)]"
           >
             {menuGroups.map((group, gi) => (
               <div key={gi}>
@@ -144,14 +125,12 @@ export function HamburgerMenu({
                     key={item.id}
                     onClick={() => handleItemClick(item.id)}
                     className={cn(
-                      "flex w-full items-center gap-3 px-6 py-3 text-left text-[15px] text-[#202433] transition-colors hover:bg-[#f8f7fc]",
-                      item.id === "command-palette" || item.id === "sign-up" ? "font-semibold text-[#6d63da]" : ""
+                      "flex w-full items-center gap-3 px-4 py-2.5 text-left text-[13px] text-zinc-300 transition-colors hover:bg-white/10 hover:text-white"
                     )}
                   >
                     <item.icon
                       className={cn(
-                        "h-4 w-4 shrink-0 text-[#2d3140]",
-                        item.id === "command-palette" || item.id === "sign-up" ? "text-[#6d63da]" : ""
+                        "h-4 w-4 shrink-0 text-zinc-500"
                       )}
                       strokeWidth={1.6}
                     />
@@ -168,21 +147,21 @@ export function HamburgerMenu({
 
             <button
               onClick={() => handleItemClick("preferences")}
-              className="flex w-full items-center gap-3 px-6 py-3 text-left text-[15px] text-[#202433] transition-colors hover:bg-[#f8f7fc]"
+              className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-[13px] text-zinc-300 transition-colors hover:bg-white/10 hover:text-white"
             >
-              <Settings className="h-4 w-4 shrink-0 text-[#2d3140]" strokeWidth={1.6} />
+              <Settings className="h-4 w-4 shrink-0 text-zinc-500" strokeWidth={1.6} />
               <span className="flex-1 truncate">Preferences</span>
               <ChevronRight className="h-4 w-4 text-[#a0a4b8]" strokeWidth={1.6} />
             </button>
 
-            <div className="mx-6 mt-2 mb-1 text-[15px] text-[#202433]">Theme</div>
+            <div className="mx-4 mt-3 mb-1 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">Appearance</div>
 
-            <div className="mx-6 mb-4 inline-flex items-center rounded-2xl border border-[#eceaf4] bg-white p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+            <div className="mx-4 mb-3 inline-flex items-center rounded-xl border border-white/10 bg-black/20 p-1">
               <button
                 onClick={() => theme !== "light" && onThemeToggle?.()}
                 className={cn(
                   "flex h-8 w-8 items-center justify-center rounded-xl transition-colors",
-                  theme === "light" ? "bg-[#6d63da] text-white" : "text-[#6d63da]"
+                  theme === "light" ? "bg-cyan-400 text-black" : "text-zinc-400"
                 )}
               >
                 <Sun className="h-4 w-4" strokeWidth={1.7} />
@@ -191,31 +170,28 @@ export function HamburgerMenu({
                 onClick={() => theme !== "dark" && onThemeToggle?.()}
                 className={cn(
                   "flex h-8 w-8 items-center justify-center rounded-xl transition-colors",
-                  theme === "dark" ? "bg-[#6d63da] text-white" : "text-[#6d63da]"
+                  theme === "dark" ? "bg-cyan-400 text-black" : "text-zinc-400"
                 )}
               >
                 <Moon className="h-4 w-4" strokeWidth={1.7} />
               </button>
-              <button className="flex h-8 w-8 items-center justify-center rounded-xl text-[#6d63da] transition-colors">
-                <Globe className="h-4 w-4" strokeWidth={1.7} />
-              </button>
             </div>
 
-            <div className="mx-6 mt-2 mb-1 text-[15px] text-[#202433]">Colors</div>
+            <div className="mx-4 mt-3 mb-1 text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500">Board colors</div>
 
-            <div className="mx-6 mb-4 space-y-3">
+            <div className="mx-4 mb-3 space-y-2">
               <div className="flex items-center gap-3">
-                <Palette className="h-4 w-4 text-[#2d3140]" strokeWidth={1.6} />
-                <span className="flex-1 text-sm text-[#202433]">Stroke</span>
+                <Palette className="h-4 w-4 text-zinc-500" strokeWidth={1.6} />
+                <span className="flex-1 text-[13px] text-zinc-300">Stroke</span>
                 <Popover>
                   <PopoverTrigger asChild>
                     <button
-                      className="h-8 w-8 rounded-lg border border-[#eceaf4] transition-colors hover:border-[#6d63da]"
+                      className="h-7 w-7 rounded-lg border border-white/15 transition-colors hover:border-cyan-400"
                       style={{ backgroundColor: strokeColor }}
                       aria-label="Stroke color"
                     />
                   </PopoverTrigger>
-                  <PopoverContent className="w-[280px] p-3 border-[#eceaf4] bg-white" align="end">
+                  <PopoverContent className="w-[280px] border-white/10 bg-[#1a1d23] p-3 text-white" align="end">
                     <ColorPicker value={strokeColor} onChange={([r, g, b]) => onStrokeColorChange?.(`#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`)}>
                       <ColorPickerSelection className="h-40 rounded-lg" />
                       <ColorPickerHue />
@@ -230,12 +206,12 @@ export function HamburgerMenu({
                 </Popover>
               </div>
               <div className="flex items-center gap-3">
-                <Droplet className="h-4 w-4 text-[#2d3140]" strokeWidth={1.6} />
-                <span className="flex-1 text-sm text-[#202433]">Fill</span>
+                <Droplet className="h-4 w-4 text-zinc-500" strokeWidth={1.6} />
+                <span className="flex-1 text-[13px] text-zinc-300">Fill</span>
                 <Popover>
                   <PopoverTrigger asChild>
                     <button
-                      className="h-8 w-8 rounded-lg border border-[#eceaf4] transition-colors hover:border-[#6d63da]"
+                      className="h-7 w-7 rounded-lg border border-white/15 transition-colors hover:border-cyan-400"
                       style={{ backgroundColor: fillColor === "transparent" ? "transparent" : fillColor }}
                       aria-label="Fill color"
                     >
@@ -252,7 +228,7 @@ export function HamburgerMenu({
                       )}
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[280px] p-3 border-[#eceaf4] bg-white" align="end">
+                  <PopoverContent className="w-[280px] border-white/10 bg-[#1a1d23] p-3 text-white" align="end">
                     <ColorPicker value={fillColor} onChange={([r, g, b]) => onFillColorChange?.(`#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`)}>
                       <ColorPickerSelection className="h-40 rounded-lg" />
                       <ColorPickerHue />
@@ -268,14 +244,14 @@ export function HamburgerMenu({
               </div>
             </div>
 
-            <div className="relative px-6 pb-2">
+            <div className="relative px-4 pb-2">
               <button
                 onClick={() => setLangOpen((current) => !current)}
-                className="flex w-full items-center gap-3 rounded-xl border border-[#eceaf4] px-4 py-3 text-left text-[15px] text-[#202433] transition-colors hover:bg-[#f8f7fc]"
+                className="flex w-full items-center gap-3 rounded-xl border border-white/15 px-3 py-2.5 text-left text-[13px] text-zinc-300 transition-colors hover:bg-white/10 hover:text-white"
               >
                 <span className="flex-1">{language}</span>
                 <ChevronRight
-                  className={cn("h-4 w-4 text-[#202433] transition-transform", langOpen ? "rotate-90" : "")}
+                  className={cn("h-4 w-4 text-zinc-500 transition-transform", langOpen ? "rotate-90" : "")}
                   strokeWidth={1.8}
                 />
               </button>
@@ -287,7 +263,7 @@ export function HamburgerMenu({
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -8 }}
                     transition={{ duration: 0.12 }}
-                    className="absolute left-full top-0 ml-2 min-w-[180px] origin-top-left rounded-2xl border border-[#eceaf4] bg-white py-1 shadow-[0_24px_60px_-30px_rgba(15,23,42,0.45)]"
+                    className="absolute left-full top-0 ml-2 min-w-[180px] origin-top-left rounded-2xl border border-white/10 bg-[#1a1d23] py-1 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.8)]"
                   >
                     {languages.map((lang) => (
                       <button
@@ -296,10 +272,10 @@ export function HamburgerMenu({
                           setLanguage(lang);
                           setLangOpen(false);
                         }}
-                        className="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-[#202433] transition-colors hover:bg-[#f8f7fc]"
+                        className="flex w-full items-center gap-3 px-4 py-2 text-left text-sm text-zinc-300 transition-colors hover:bg-white/10 hover:text-white"
                       >
                         <span className={cn("flex-1", lang === language && "font-medium")}>{lang}</span>
-                        {lang === language && <Check className="h-3.5 w-3.5 text-[#6d63da]" strokeWidth={2} />}
+                        {lang === language && <Check className="h-3.5 w-3.5 text-cyan-400" strokeWidth={2} />}
                       </button>
                     ))}
                   </motion.div>

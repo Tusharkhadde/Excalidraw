@@ -999,6 +999,15 @@
 .hero-zoom { animation:heroZoom 1.8s cubic-bezier(0.16,1,0.3,1) forwards; }
 @media (prefers-reduced-motion: reduce){ .hero-anim,.hero-zoom{ animation:none; opacity:1; } }
 
+/* Landing page system: quiet monochrome surfaces and one visual language. */
+.landing-page [class*="bg-gradient"] { background-image: none !important; }
+.landing-page [class*="from-indigo"], .landing-page [class*="from-purple"], .landing-page [class*="from-blue"], .landing-page [class*="from-cyan"] { background-color: #000 !important; }
+.landing-page [class*="bg-indigo"], .landing-page [class*="bg-purple"], .landing-page [class*="bg-blue"], .landing-page [class*="bg-emerald"], .landing-page [class*="bg-amber"], .landing-page [class*="bg-sky"], .landing-page [class*="bg-violet"] { background-color: #f5f5f5 !important; }
+.landing-page [class*="text-indigo"], .landing-page [class*="text-purple"], .landing-page [class*="text-blue"], .landing-page [class*="text-emerald"], .landing-page [class*="text-amber"], .landing-page [class*="text-sky"], .landing-page [class*="text-violet"] { color: #111 !important; }
+.landing-page [class*="shadow-indigo"], .landing-page [class*="shadow-purple"], .landing-page [class*="shadow-blue"] { box-shadow: none !important; }
+.landing-page [class*="border-indigo"], .landing-page [class*="border-purple"], .landing-page [class*="border-slate"], .landing-page [class*="border-blue"] { border-color: rgba(0,0,0,.12) !important; }
+.landing-page [class*="bg-slate-50"], .landing-page [class*="bg-slate-100"] { background-color: #fafafa !important; }
+
 @keyframes border-beam {
   100% {
     offset-distance: 100%;
