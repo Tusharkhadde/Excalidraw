@@ -7,20 +7,24 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import * as Dialog from "@radix-ui/react-dialog";
 
-const navLinks: { label: string; href: string }[] = [];
+const navLinks: { label: string; href: string }[] = [
+  { label: "Product", href: "#features" },
+  { label: "How it works", href: "#how-it-works" },
+  { label: "Open source", href: "#open-source" },
+];
 
 export function Navbar() {
   const { token, signout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-black/10 bg-white/90 text-black backdrop-blur-xl">
+    <header className="fixed top-0 left-0 right-0 z-50 border-b border-slate-800/80 bg-[#080b10]/85 text-white backdrop-blur-xl">
       <div className="mx-auto flex h-[76px] max-w-[1280px] items-center justify-between px-6 lg:px-10">
         <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-300 text-slate-950 shadow-[0_0_24px_rgba(45,212,191,.18)]">
             <PenTool className="h-5 w-5 -rotate-45 text-white" />
           </div>
-          <span className="text-xl font-semibold tracking-[-0.04em] text-black">Drawboard</span>
+          <span className="text-xl font-semibold tracking-[-0.04em] text-white">Drawboard<span className="text-teal-300">.</span></span>
         </Link>
 
         {/* Desktop Nav */}
@@ -29,16 +33,16 @@ export function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+            className="text-sm font-medium text-slate-400 hover:text-white transition-colors"
             >
               {link.label}
             </Link>
           ))}
-          <Link href="#features" className="text-sm font-medium text-neutral-500 transition-colors hover:text-black">
+          <Link href="#features" className="text-sm font-medium text-slate-400 transition-colors hover:text-white">
             Docs
           </Link>
 
-          <div className="flex items-center gap-4 border-l border-black/10 pl-7">
+          <div className="flex items-center gap-4 border-l border-slate-800 pl-7">
             {token ? (
               <div className="flex items-center gap-3 shrink-0">
                 <Button asChild variant="secondary" size="sm" className="shrink-0 min-w-max shadow-sm hover:shadow-md transition-all">
@@ -61,7 +65,7 @@ export function Navbar() {
                     Log in
                   </Link>
                 </Button>
-                <Button asChild variant="primary" size="default" className="min-w-max rounded-lg border-0 bg-black px-6 py-2.5 text-sm font-semibold text-white shadow-none transition-colors hover:bg-neutral-800">
+                <Button asChild variant="premium" size="default" className="nav-cta min-w-max rounded-lg px-6 py-2.5 text-sm font-semibold shadow-none transition-colors">
                   <Link href="/signup">Get Started →</Link>
                 </Button>
               </div>

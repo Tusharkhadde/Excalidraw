@@ -11,6 +11,8 @@ const buttonVariants = cva(
       variant: {
         primary:
           "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-[inset_0_-2px_2px_rgba(0,0,0,0.15),inset_0_0_0_1px_rgba(255,255,255,0.15),inset_0_1px_6px_rgba(255,255,255,0.3),0_4px_12px_rgba(99,102,241,0.3)] hover:brightness-110",
+        premium:
+          "border border-[#e7e1d6] bg-[#e7e1d6] text-[#161616] shadow-[0_8px_24px_rgba(0,0,0,0.18)] hover:bg-[#f2eee6] hover:border-[#f2eee6]",
         default:
           "bg-primary text-primary-foreground hover:bg-primary/90 shadow-[inset_0_-1px_1px_rgba(0,0,0,0.1),inset_0_0_0_1px_rgba(255,255,255,0.1),0_1px_3px_rgba(0,0,0,0.1)]",
         destructive:
