@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "pnpm install",
   "buildCommand": "pnpm turbo run build --filter=drawboard-frontend",
   "outputDirectory": "apps/drawboard-frontend/.next",
   "framework": "nextjs"
