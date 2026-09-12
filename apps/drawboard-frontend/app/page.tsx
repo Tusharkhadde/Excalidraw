@@ -1,258 +1,234 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-
+import { useRouter } from "next/navigation";
+import { FormEvent, useCallback, useEffect, useState } from "react";
+import { ArrowRight, ArrowUpRight, Check, Copy, FolderOpen, Loader2, MoreHorizontal, Plus, Search, Sparkles, Users, ExternalLink } from "lucide-react";
+import { toast } from "sonner";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Navbar } from "@/components/Navbar";
-import Hero from "@/components/Hero";
-import Features from "@/components/Features";
-import HowItWorks from "@/components/HowItWorks";
-import LiveDemo from "@/components/LiveDemo";
-import Testimonials from "@/components/Testimonials";
-import CTA from "@/components/CTA";
-import LandingFooter from "@/components/LandingFooter";
+import { LandingPage } from "@/components/Marketing";
 import { Button } from "@/components/ui/button";
-import {
-  Plus,
-  ExternalLink,
-  Copy,
-  Check,
-  Pen,
-} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import type { RoomResponseType } from "@repo/common/types";
 
-interface Room {
-  id: number;
-  slug: string;
-  adminId: string;
-  createdAt: string;
-}
-
-function LandingHero() {
-  return (
-    <div className="landing-page min-h-screen bg-white text-black">
-      <Navbar />
-      <Hero />
-      <Features />
-      <HowItWorks />
-      <LiveDemo />
-      <Testimonials />
-      <CTA />
-      <LandingFooter />
-    </div>
-  );
-}
+/* ───────────────────────────── Dashboard ───────────────────────────── */
 
 function Dashboard() {
   const router = useRouter();
-  const { token, isLoading } = useAuth();
-
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [roomsLoading, setRoomsLoading] = useState(false);
-  const [roomsError, setRoomsError] = useState("");
-
-  const [newSlug, setNewSlug] = useState("");
+  const { user } = useAuth();
+  const [rooms, setRooms] = useState<RoomResponseType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [slug, setSlug] = useState("");
+  const [join, setJoin] = useState("");
+  const [search, setSearch] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [joining, setJoining] = useState(false);
   const [createError, setCreateError] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
-
-  const [joinInput, setJoinInput] = useState("");
   const [joinError, setJoinError] = useState("");
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
-    if (!token) return;
-    setRoomsLoading(true);
-    setRoomsError("");
+    let active = true;
+    setLoading(true);
+    setError("");
     api
-      .get<Room[]>("/rooms")
-      .then(setRooms)
-      .catch((e) =>
-        setRoomsError(e instanceof ApiError ? e.message : "Failed to load rooms")
-      )
-      .finally(() => setRoomsLoading(false));
-  }, [token]);
+      .get<RoomResponseType[]>("/rooms")
+      .then((data) => active && setRooms(data))
+      .catch((e) => active && setError(e instanceof ApiError ? e.message : "We couldn't load your rooms. Check that the server is running and try again."))
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [reload]);
 
-  async function handleCreateRoom() {
-    if (!token) {
-      router.push("/signin");
+  async function createRoom(event: FormEvent) {
+    event.preventDefault();
+    if (creating) return;
+    const normalized = slug.trim().toLowerCase().replace(/\s+/g, "-");
+    if (!/^[a-z0-9-]{3,50}$/.test(normalized)) {
+      setCreateError("Use 3–50 letters, numbers, or dashes for your room name.");
       return;
     }
-    const slug = newSlug
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, "-");
-    if (slug.length < 3) {
-      setCreateError("Slug must be at least 3 characters");
-      return;
-    }
-    if (!/^[a-z0-9-]+$/.test(slug)) {
-      setCreateError("Only lowercase letters, numbers, and dashes");
-      return;
-    }
-
-    setIsCreating(true);
+    setCreating(true);
     setCreateError("");
     try {
-      const room = await api.post<{ id: number; slug: string }>("/room", { slug });
+      const room = await api.post<{ id: number }>("/room", { slug: normalized });
+      toast.success(`Room "${normalized}" created`);
       router.push(`/canvas/${room.id}`);
     } catch (e) {
-      setCreateError(
-        e instanceof ApiError ? e.message : "Failed to create room"
-      );
+      setCreateError(e instanceof ApiError ? e.message : "Couldn't create the room. Please try again.");
     } finally {
-      setIsCreating(false);
+      setCreating(false);
     }
   }
 
-  async function handleJoinRoom() {
-    if (!token) {
-      router.push("/signin");
+  async function joinRoom(event: FormEvent) {
+    event.preventDefault();
+    if (joining) return;
+    let value = join.trim();
+    try {
+      if (/^https?:\/\//i.test(value)) value = new URL(value).pathname.match(/^\/canvas\/([1-9]\d*)\/?$/)?.[1] || "";
+    } catch {
+      value = "";
+    }
+    if (!value) {
+      setJoinError("Enter a room link, ID, or name.");
       return;
     }
-    const raw = joinInput.trim();
-    if (!raw) {
-      setJoinError("Enter a room ID or slug");
-      return;
-    }
-
+    setJoining(true);
     setJoinError("");
-    if (/^\d+$/.test(raw)) {
-      router.push(`/canvas/${raw}`);
-    } else {
-      try {
-        const room = await api.get<{ id: number }>(`/room/${raw}`);
-        router.push(`/canvas/${room.id}`);
-      } catch (e) {
-        setJoinError(e instanceof ApiError ? e.message : "Room not found");
-      }
+    try {
+      const id = /^[1-9]\d*$/.test(value) ? value : (await api.get<{ id: number }>(`/room/${encodeURIComponent(value)}`)).id;
+      router.push(`/canvas/${id}`);
+    } catch (e) {
+      setJoinError(e instanceof ApiError ? e.message : "Couldn't find that room. Check the link and try again.");
+    } finally {
+      setJoining(false);
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f8f5ff]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
-          <span className="text-sm text-gray-400">Loading...</span>
-        </div>
-      </div>
-    );
-  }
+  const filtered = rooms.filter((room) => room.slug.toLowerCase().includes(search.toLowerCase()));
+  const firstName = user?.name?.split(" ")[0];
 
-  // Landing (not signed in)
-  if (!token) {
-    return <LandingHero />;
-  }
-
-  // Dashboard (signed in)
   return (
-    <div className="min-h-screen bg-[#f8f5ff]">
+    <div className="min-h-svh bg-background">
       <Navbar />
-
-      <main className="mx-auto max-w-[1200px] px-6 pt-28 pb-12">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 mb-2">
-            Dashboard
-          </h1>
-          <p className="text-gray-500">
-            Manage your whiteboards and collaborate with your team.
-          </p>
+      <main className="container py-12 lg:py-16">
+        {/* Heading */}
+        <div className="reveal flex flex-col justify-between gap-6 md:flex-row md:items-end">
+          <div>
+            <Badge variant="soft">
+              <Sparkles className="size-3.5" /> Your creative workspace
+            </Badge>
+            <h1 className="display mt-4 text-4xl sm:text-5xl">
+              Good to see you{firstName ? `, ${firstName}` : ""}
+              <em>.</em>
+            </h1>
+            <p className="prose-muted mt-3">A fresh thought, an unfinished plan. What will you work on today?</p>
+          </div>
+          <Button asChild variant="outline" size="lg" className="rounded-full">
+            <Link href="/canvas/guest">
+              Quick sketch <ArrowUpRight />
+            </Link>
+          </Button>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2 mb-8">
-          <section className="rounded-2xl border border-gray-200 bg-white p-6">
-            <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900 mb-1">
-              <Plus className="h-4 w-4 text-violet-600" /> Create a Room
-            </h2>
-            <p className="text-sm text-gray-500 mb-4">
-              Pick a unique slug for your whiteboard room.
-            </p>
-            <div className="flex gap-3">
-              <input
-                type="text"
-                value={newSlug}
-                onChange={(e) => setNewSlug(e.target.value)}
-                placeholder="my-room-slug"
-                className="input-raycast flex-1"
-              />
-              <Button
-                onClick={handleCreateRoom}
-                disabled={isCreating}
-                variant="primary"
-              >
-                {isCreating ? "Creating..." : "Create & Open"}
-              </Button>
-            </div>
-            {createError && (
-              <p className="mt-2 text-xs text-red-500">{createError}</p>
-            )}
-          </section>
+        {/* Actions */}
+        <div className="mt-10 grid gap-5 lg:grid-cols-2">
+          <Card className="shadow-soft">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2.5">
+                <span className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                  <Plus size={16} />
+                </span>
+                Start something new
+              </CardTitle>
+              <CardDescription>Give your next idea a space of its own.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form className="flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={createRoom}>
+                <div className="flex-1 space-y-2">
+                  <Label htmlFor="room-name">Room name</Label>
+                  <Input id="room-name" placeholder="e.g. product-brainstorm" value={slug} onChange={(e) => setSlug(e.target.value)} minLength={3} maxLength={50} required disabled={creating} />
+                </div>
+                <Button type="submit" disabled={creating} className="sm:w-auto">
+                  {creating ? <Loader2 className="animate-spin" /> : <Plus />} Create room
+                </Button>
+              </form>
+              {createError && (
+                <p role="alert" className="mt-3 text-sm text-destructive">
+                  {createError}
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
-          <section className="rounded-2xl border border-gray-200 bg-white p-6">
-            <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900 mb-1">
-              <ExternalLink className="h-4 w-4 text-emerald-600" /> Join a Room
-            </h2>
-            <p className="text-sm text-gray-500 mb-4">
-              Enter a room ID or slug to join an existing whiteboard.
-            </p>
-            <div className="flex gap-3">
-              <input
-                type="text"
-                value={joinInput}
-                onChange={(e) => setJoinInput(e.target.value)}
-                placeholder="room-id or room-slug"
-                className="input-raycast flex-1"
-              />
-              <Button
-                onClick={handleJoinRoom}
-                variant="default"
-                className="bg-gray-900 hover:bg-gray-800"
-              >
-                Join
-              </Button>
-            </div>
-            {joinError && (
-              <p className="mt-2 text-xs text-red-500">{joinError}</p>
-            )}
-          </section>
+          <Card className="shadow-soft">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2.5">
+                <span className="grid size-8 place-items-center rounded-lg bg-peach text-orange-700">
+                  <Users size={16} />
+                </span>
+                Pick up the conversation
+              </CardTitle>
+              <CardDescription>Have an invite? Join your team’s canvas.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form className="flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={joinRoom}>
+                <div className="flex-1 space-y-2">
+                  <Label htmlFor="join-room">Room link, ID, or name</Label>
+                  <Input id="join-room" placeholder="Paste a link or room name" value={join} onChange={(e) => setJoin(e.target.value)} required disabled={joining} />
+                </div>
+                <Button type="submit" variant="secondary" disabled={joining}>
+                  Join {joining ? <Loader2 className="animate-spin" /> : <ArrowRight />}
+                </Button>
+              </form>
+              {joinError && (
+                <p role="alert" className="mt-3 text-sm text-destructive">
+                  {joinError}
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
-        <section>
-          <h2 className="text-base font-semibold text-gray-900 mb-4">
-            Your Rooms
-          </h2>
-
-          {roomsLoading && (
-            <div className="flex items-center gap-3 py-8">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
-              <span className="text-sm text-gray-400">Loading...</span>
+        {/* Rooms */}
+        <section aria-labelledby="rooms-title" className="mt-14">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <h2 id="rooms-title" className="flex items-center gap-3 text-xl font-semibold tracking-tight">
+              Your boards
+              {!loading && <Badge variant="secondary">{rooms.length}</Badge>}
+            </h2>
+            <div className="relative sm:w-64">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input aria-label="Search your boards" placeholder="Find a board…" className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
-          )}
-          {roomsError && (
-            <p className="text-sm text-red-500">{roomsError}</p>
-          )}
+          </div>
 
-          {!roomsLoading && !roomsError && rooms.length === 0 && (
-            <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center">
-              <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-violet-100 mb-4">
-                <Pen className="h-6 w-6 text-violet-500" />
-              </div>
-              <p className="text-sm font-medium text-gray-900 mb-1">
-                No rooms yet
-              </p>
-              <p className="text-sm text-gray-500">
-                Create one above to get started.
-              </p>
+          {loading ? (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" role="status" aria-label="Loading boards">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i} className="overflow-hidden shadow-none">
+                  <Skeleton className="h-36 rounded-none" />
+                  <div className="space-y-2.5 p-5">
+                    <Skeleton className="h-4 w-2/3" />
+                    <Skeleton className="h-3 w-1/3" />
+                  </div>
+                </Card>
+              ))}
             </div>
-          )}
-
-          {rooms.length > 0 && (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {rooms.map((room) => (
+          ) : error ? (
+            <EmptyState icon={FolderOpen} title="Let's try that again" description={error}>
+              <Button variant="outline" onClick={() => setReload(reload + 1)}>
+                Reload boards
+              </Button>
+            </EmptyState>
+          ) : filtered.length ? (
+            <div className="reveal grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((room) => (
                 <RoomCard key={room.id} room={room} />
               ))}
             </div>
+          ) : (
+            <EmptyState
+              icon={search ? Search : FolderOpen}
+              title={search ? "No boards found" : "A blank slate. In the best way."}
+              description={search ? "Try a different name to find your board." : "Create your first room above. Your next great idea belongs here."}
+            >
+              {search && (
+                <Button variant="outline" onClick={() => setSearch("")}>
+                  Clear search
+                </Button>
+              )}
+            </EmptyState>
           )}
         </section>
       </main>
@@ -260,72 +236,101 @@ function Dashboard() {
   );
 }
 
-function RoomCard({ room }: { room: Room }) {
-  const [copied, setCopied] = useState(false);
-
-  const roomUrl = `${
-    typeof window !== "undefined" ? window.location.origin : ""
-  }/canvas/${room.id}`;
-
-  async function copyLink() {
-    try {
-      await navigator.clipboard.writeText(roomUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // fallback
-    }
-  }
-
+function EmptyState({ icon: Icon, title, description, children }: { icon: typeof FolderOpen; title: string; description: string; children?: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4 transition-all duration-200 hover:border-violet-200 hover:shadow-lg hover:shadow-violet-100/50 group">
-      <div className="flex items-start justify-between">
-        <div>
-          <Link
-            href={`/canvas/${room.id}`}
-            className="font-medium text-sm text-gray-900 hover:text-violet-600 transition-colors"
-          >
-            {room.slug}
-          </Link>
-          <p className="mt-0.5 text-xs text-gray-400">
-            Created {new Date(room.createdAt).toLocaleDateString()}
-          </p>
-        </div>
-        <button
-          onClick={copyLink}
-          className="rounded-lg p-1.5 text-gray-400 hover:bg-violet-50 hover:text-violet-600 transition-all"
-          title="Copy room link"
-        >
-          {copied ? (
-            <Check className="h-4 w-4 text-emerald-500" />
-          ) : (
-            <Copy className="h-4 w-4" />
-          )}
-        </button>
+    <div className="dot-grid rounded-2xl border border-dashed px-6 py-16 text-center">
+      <div className="mx-auto grid size-12 place-items-center rounded-xl bg-primary/10 text-primary">
+        <Icon size={22} />
       </div>
-      <Link
-        href={`/canvas/${room.id}`}
-        className="mt-3 inline-flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700 transition-colors"
-      >
-        Open Canvas <ExternalLink className="h-3 w-3" />
-      </Link>
+      <h3 className="mt-5 text-lg font-semibold tracking-tight">{title}</h3>
+      <p className="prose-muted mx-auto mt-2 max-w-sm text-sm">{description}</p>
+      {children && <div className="mt-6">{children}</div>}
     </div>
   );
 }
 
-export default function HomePage() {
-  const { isLoading } = useAuth();
+function RoomCard({ room }: { room: RoomResponseType }) {
+  const [copied, setCopied] = useState(false);
+  const href = `/canvas/${room.id}`;
 
+  const copy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}${href}`);
+      setCopied(true);
+      toast.success("Link copied to clipboard");
+    } catch {
+      toast.error("Couldn't copy. Open the board and copy its address.");
+    }
+  }, [href]);
+
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(t);
+  }, [copied]);
+
+  const created = new Date(room.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+
+  return (
+    <Card className="group overflow-hidden shadow-none transition-all duration-300 hover:-translate-y-1 hover:shadow-lift">
+      <Link href={href} aria-label={`Open ${room.slug}`} className="block">
+        <div className="dot-grid relative flex h-36 items-center justify-center gap-3 bg-lavender/60 text-primary/70">
+          <span className="grid h-11 w-16 -rotate-6 place-items-center rounded-md border border-primary/30 bg-card shadow-sm transition-transform duration-300 group-hover:-rotate-3 group-hover:-translate-y-0.5">
+            <Sparkles size={18} />
+          </span>
+          <ArrowRight size={20} className="text-primary/50" />
+          <span className="grid size-11 rotate-6 place-items-center rounded-full border border-amber-500/40 bg-butter text-amber-700 shadow-sm transition-transform duration-300 group-hover:rotate-3 group-hover:-translate-y-0.5">
+            <Check size={18} />
+          </span>
+          <span className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+        </div>
+      </Link>
+      <div className="flex items-center justify-between gap-3 p-4">
+        <div className="min-w-0">
+          <h3 className="truncate font-semibold tracking-tight">
+            <Link href={href} className="hover:text-primary">
+              {room.slug}
+            </Link>
+          </h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">Created {created}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <Button variant="ghost" size="icon-sm" onClick={copy} aria-label={`Copy link to ${room.slug}`} className="text-muted-foreground">
+            {copied ? <Check className="text-emerald-600 animate-check-pop" /> : <Copy />}
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon-sm" aria-label="More options" className="text-muted-foreground">
+                <MoreHorizontal />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href={href}>
+                  <ExternalLink /> Open board
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={copy}>
+                <Copy /> Copy invite link
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+/* ───────────────────────────── Route ───────────────────────────── */
+
+export default function HomePage() {
+  const { token, isLoading } = useAuth();
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f8f5ff]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
-          <span className="text-sm text-gray-400">Loading...</span>
-        </div>
+      <div className="grid min-h-svh place-items-center" role="status">
+        <Loader2 className="size-6 animate-spin text-primary" aria-label="Loading workspace" />
       </div>
     );
   }
-
-  return <Dashboard />;
+  return token ? <Dashboard /> : <LandingPage />;
 }
