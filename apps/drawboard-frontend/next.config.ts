@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  transpilePackages: ["@repo/common", "@repo/ui"],
+  // Lets `next build` run while `next dev` holds `.next` (e.g. NEXT_DIST_DIR=.next-build).
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   images: {
     remotePatterns: [
       {
