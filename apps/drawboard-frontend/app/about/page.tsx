@@ -1,101 +1,76 @@
-"use client";
-
+import type { Metadata } from "next";
+import { Github, Heart, Pencil, Users } from "lucide-react";
 import Link from "next/link";
-import { Navbar } from "@/components/Navbar";
-import { ArrowRight, Users, Globe, Shield, Heart } from "lucide-react";
+import { MarketingCTA, MarketingShell, PageHero } from "@/components/Marketing";
+import { BoardPreview } from "@/components/BoardPreview";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
+export const metadata: Metadata = { title: "About", description: "A simpler space to think, sketch, and create together." };
+
+const values = [
+  { icon: Pencil, title: "Simple by intention", text: "Useful tools, a quiet interface, and fewer things between you and your next idea.", tone: "bg-lavender text-primary" },
+  { icon: Users, title: "Together is better", text: "A shared canvas makes it easier to explain, ask questions, and find a way forward.", tone: "bg-peach text-orange-700" },
+  { icon: Heart, title: "Room for everyone", text: "You don't need to be a designer. If you can imagine it, you can start sketching it.", tone: "bg-mint text-emerald-700" },
+];
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-white">
-      <Navbar />
+    <MarketingShell>
+      <PageHero
+        eyebrow="A little about us"
+        title={
+          <>
+            Great things start
+            <br />
+            <em>with a shared idea.</em>
+          </>
+        }
+        description="We believe the best thinking happens when everyone has a little room to contribute. Drawboard is that room."
+      />
 
-      <main className="pt-24">
-        {/* Hero */}
-        <section className="py-20">
-          <div className="mx-auto max-w-[1200px] px-6 text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-1.5 text-sm text-gray-600 shadow-sm mb-8">
-              About Drawboard
-            </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-gray-900 mb-6">
-              We believe drawing
-              <br />
-              should be{" "}
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                collaborative
-              </span>
-            </h1>
-            <p className="mx-auto max-w-2xl text-lg text-gray-500 mb-10">
-              Drawboard was built to make real-time collaboration simple and accessible.
-              No downloads, no accounts required — just open and draw together.
-            </p>
-          </div>
-        </section>
-
-        {/* Values */}
-        <section className="py-20 bg-gray-50">
-          <div className="mx-auto max-w-[1200px] px-6">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 text-center mb-16">
-              Our Values
-            </h2>
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="text-center">
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600 mb-4">
-                  <Users className="h-6 w-6" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Collaboration First</h3>
-                <p className="text-sm text-gray-500">
-                  Built for teams who work together, with real-time sync and multiplayer editing.
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 text-purple-600 mb-4">
-                  <Globe className="h-6 w-6" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Always Accessible</h3>
-                <p className="text-sm text-gray-500">
-                  Works in any browser, on any device. No downloads or installations needed.
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 text-green-600 mb-4">
-                  <Shield className="h-6 w-6" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Simple & Secure</h3>
-                <p className="text-sm text-gray-500">
-                  Clean interface, powerful features. Your data stays private and secure.
-                </p>
-              </div>
-              <div className="text-center">
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-pink-100 text-pink-600 mb-4">
-                  <Heart className="h-6 w-6" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Made with Love</h3>
-                <p className="text-sm text-gray-500">
-                  Crafted with care for designers, developers, and creative teams everywhere.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* CTA */}
-        <section className="py-20">
-          <div className="mx-auto max-w-[1200px] px-6 text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 mb-4">
-              Ready to get started?
-            </h2>
-            <p className="text-lg text-gray-500 mb-8">
-              Join thousands of teams who use Drawboard every day.
-            </p>
-            <Link
-              href="/canvas/guest"
-              className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-6 py-3 text-sm font-medium text-white hover:bg-gray-800 transition-all"
-            >
-              Start Drawing Free <ArrowRight className="h-4 w-4" />
+      <section className="container grid items-center gap-14 pb-24 lg:grid-cols-2">
+        <BoardPreview className="rotate-1" />
+        <div>
+          <span className="eyebrow">Why Drawboard exists</span>
+          <h2 className="display mt-4 text-4xl">
+            Make thinking visible.
+            <br />
+            <em>Make creating simple.</em>
+          </h2>
+          <p className="prose-muted mt-6">Some ideas are too big for a message and too early for a presentation. They need a space to be messy, to change, and to become something better.</p>
+          <p className="prose-muted mt-4">
+            That’s what we’re building: an approachable whiteboard where a quick sketch can turn into a shared understanding. No complicated setup. No perfect lines. Just you, your team, and a
+            little possibility.
+          </p>
+          <Button asChild variant="outline" className="mt-8">
+            <Link href="https://github.com" target="_blank" rel="noreferrer">
+              <Github /> Star us on GitHub
             </Link>
+          </Button>
+        </div>
+      </section>
+
+      <section className="border-y bg-muted/40 py-24">
+        <div className="container">
+          <span className="eyebrow">What we care about</span>
+          <div className="mt-6 grid gap-5 md:grid-cols-3">
+            {values.map(({ icon: Icon, title, text, tone }) => (
+              <Card key={title} className="p-7 shadow-none transition-shadow hover:shadow-soft">
+                <div className={`grid size-11 place-items-center rounded-xl ${tone}`}>
+                  <Icon size={20} />
+                </div>
+                <h3 className="mt-6 text-[17px] font-semibold tracking-tight">{title}</h3>
+                <p className="prose-muted mt-2 text-sm">{text}</p>
+              </Card>
+            ))}
           </div>
-        </section>
-      </main>
-    </div>
+        </div>
+      </section>
+
+      <div className="pt-16">
+        <MarketingCTA />
+      </div>
+    </MarketingShell>
   );
 }
