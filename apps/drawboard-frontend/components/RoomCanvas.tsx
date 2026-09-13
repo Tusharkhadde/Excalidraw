@@ -1,169 +1,210 @@
 "use client";
 
-import { WS_URL } from "@/config";
-import { useAuth } from "@/lib/auth";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { Canvas } from "./Canvas";
-import { Wifi, WifiOff, Loader2, Pen, Lock } from "lucide-react";
+import { StatePage } from "./StatePage";
+import { Button } from "@/components/ui/button";
+import { getExistingShapes } from "@/draw/http";
+import { HTTP_BACKEND, WS_URL } from "@/config";
+import { useAuth } from "@/lib/auth";
+import type { Shape } from "@repo/common/types";
+import type { Connection } from "./excalidraw/types";
 
-type ConnectionState = "connecting" | "connected" | "disconnected" | "error";
+const MAX_ATTEMPTS = 4;
 
 interface RoomCanvasProps {
   roomId: string;
   isGuest?: boolean;
 }
 
+/**
+ * Owns what outgrows a single board render: the websocket lifecycle, the room
+ * join handshake and the initial shapes fetched over HTTP.
+ */
 export function RoomCanvas({ roomId, isGuest = false }: RoomCanvasProps) {
-  const router = useRouter();
-  const { token } = useAuth();
+  const { token, isLoading: isAuthLoading } = useAuth();
+
   const [socket, setSocket] = useState<WebSocket | null>(null);
-  const [connState, setConnState] = useState<ConnectionState>("connecting");
-  const [error, setError] = useState("");
-  const wsRef = useRef<WebSocket | null>(null);
-  const retryCountRef = useRef(0);
-  const maxRetries = 5;
+  const [connection, setConnection] = useState<Connection>("connecting");
+  const [attempt, setAttempt] = useState(0);
+
+  const [shapes, setShapes] = useState<Shape[]>([]);
+  const [isLoadingBoard, setIsLoadingBoard] = useState(!isGuest);
+  const [boardError, setBoardError] = useState<string | null>(null);
+  const [roomName, setRoomName] = useState<string | null>(null);
+
+  const socketRef = useRef<WebSocket | null>(null);
+  const attemptRef = useRef(0);
+
+  // 1. The websocket only carries deltas, so the board is seeded over HTTP —
+  //    otherwise a returning user would always see an empty canvas.
+  useEffect(() => {
+    if (isGuest) return;
+    const controller = new AbortController();
+
+    getExistingShapes(roomId, controller.signal)
+      .then((loaded) => {
+        setShapes(loaded);
+        setBoardError(null);
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        setBoardError(error instanceof Error ? error.message : "Couldn’t load this board.");
+      })
+      .finally(() => setIsLoadingBoard(false));
+
+    return () => controller.abort();
+  }, [roomId, isGuest]);
+
+  // 2. Room name for the header — resolves for numeric ids and slug links alike.
+  useEffect(() => {
+    if (isGuest) return;
+    const controller = new AbortController();
+    fetch(`${HTTP_BACKEND}/room/${roomId}`, { signal: controller.signal })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((room: { slug?: string } | null) => {
+        if (room?.slug) setRoomName(room.slug);
+      })
+      .catch(() => {
+        // A missing name is cosmetic; the board still works.
+      });
+    return () => controller.abort();
+  }, [roomId, isGuest]);
 
   const connect = useCallback(() => {
-    const wsUrl = isGuest
-      ? `${WS_URL}?guest=true`
-      : `${WS_URL}?token=${encodeURIComponent(token || "")}`;
+    if (!isGuest && !token) return;
 
-    if (!isGuest && !token) {
-      setError("Missing login token. Please sign in again.");
-      setConnState("error");
-      return;
-    }
+    setConnection(attemptRef.current > 0 ? "reconnecting" : "connecting");
 
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
+    const query = isGuest ? "guest=true" : `token=${encodeURIComponent(token ?? "")}`;
+    const next = new WebSocket(`${WS_URL}/?${query}`);
+    socketRef.current = next;
 
-    ws.onopen = () => {
-      retryCountRef.current = 0;
-      setConnState("connected");
-      setError("");
-      ws.send(JSON.stringify({ type: "join_room", roomId }));
-      setSocket(ws);
+    next.onopen = () => {
+      attemptRef.current = 0;
+      // The server only relays to sockets that announced a room.
+      next.send(JSON.stringify({ type: "join_room", roomId }));
+      setConnection("open");
+      setSocket(next);
     };
 
-    ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-      if (msg.type === "join_room_ack") {
-        // confirmed joined
-      }
-    };
-
-    ws.onerror = () => {
-      setConnState("error");
-      setError("WebSocket connection failed.");
-    };
-
-    ws.onclose = () => {
-      setConnState("disconnected");
+    next.onclose = () => {
+      if (socketRef.current !== next) return;
+      // Live sync is down: drop the dead socket so the board stops queuing deltas.
       setSocket(null);
-      wsRef.current = null;
-
-      if (retryCountRef.current < maxRetries) {
-        retryCountRef.current++;
-        const delay = Math.min(1000 * 2 ** retryCountRef.current, 10000);
-        setTimeout(connect, delay);
+      attemptRef.current += 1;
+      if (attemptRef.current >= MAX_ATTEMPTS) {
+        setConnection("offline");
+        return;
       }
+      setConnection("reconnecting");
+      setAttempt(attemptRef.current);
+      setTimeout(connect, 600 * 2 ** (attemptRef.current - 1));
     };
-  }, [token, roomId, isGuest]);
 
-  useEffect(() => {
+    next.onerror = () => {
+      next.close();
+    };
+  }, [isGuest, token, roomId]);
+
+  const retry = useCallback(() => {
+    attemptRef.current = 0;
+    setAttempt(0);
     connect();
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.onclose = null;
-        wsRef.current.close();
-        wsRef.current = null;
-      }
-    };
   }, [connect]);
 
-  if (!isGuest && !token) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-gray-100 mb-4">
-            <Pen className="h-6 w-6 text-gray-400" />
-          </div>
-          <p className="text-sm text-gray-600 mb-4">Not authenticated.</p>
-          <button
-            onClick={() => router.push("/signin")}
-            className="text-sm text-blue-600 hover:underline"
-          >
-            Sign in
-          </button>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (isAuthLoading) return;
+    if (!isGuest && !token) return;
 
-  if (error && !socket) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-red-50 mb-4">
-            <WifiOff className="h-6 w-6 text-red-500" />
-          </div>
-          <p className="text-sm text-red-600 mb-4">{error}</p>
-          <button
-            onClick={() => { retryCountRef.current = 0; connect(); }}
-            className="px-4 py-2 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors"
-          >
-            Retry Connection
-          </button>
-        </div>
-      </div>
-    );
-  }
+    connect();
+    return () => {
+      socketRef.current?.close();
+      socketRef.current = null;
+    };
+  }, [connect, isAuthLoading, isGuest, token]);
 
-  if (!socket) {
+  if (!isGuest && !isAuthLoading && !token) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-          <span className="text-sm text-gray-500">
-            {connState === "disconnected" ? "Reconnecting..." : "Connecting to server..."}
+      <StatePage
+        icon={
+          <span className="relative grid size-9 place-items-center overflow-hidden rounded-xl">
+            <Image src="/drawboard-mark.png" alt="" width={36} height={36} className="size-full object-cover" />
           </span>
-        </div>
-      </div>
+        }
+        iconClassName="bg-transparent p-0"
+        eyebrow="Members only"
+        title="Sign in to open this board"
+        description="Boards belong to your account, so your work is still here when you come back."
+        actions={
+          <>
+            <Button asChild>
+              <Link href="/signin" prefetch={false}>Sign in</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/canvas/guest" prefetch={false}>Draw as a guest</Link>
+            </Button>
+          </>
+        }
+      />
+    );
+  }
+
+  if (isLoadingBoard || isAuthLoading) {
+    return (
+      <StatePage
+        icon={<Loader2 size={26} strokeWidth={1.8} className="animate-spin" />}
+        title="Opening your board…"
+        description="Restoring everything you left on this canvas."
+      />
+    );
+  }
+
+  if (boardError) {
+    return (
+      <StatePage
+        icon={<AlertTriangle size={26} strokeWidth={1.8} />}
+        iconClassName="bg-destructive/10 text-destructive"
+        title="We couldn’t open this board"
+        description={boardError}
+        actions={
+          <>
+            <Button
+              onClick={() => {
+                setIsLoadingBoard(true);
+                setBoardError(null);
+                getExistingShapes(roomId)
+                  .then((loaded) => setShapes(loaded))
+                  .catch((error: unknown) =>
+                    setBoardError(error instanceof Error ? error.message : "Couldn’t load this board.")
+                  )
+                  .finally(() => setIsLoadingBoard(false));
+              }}
+            >
+              Try again
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/" prefetch={false}>Back to workspace</Link>
+            </Button>
+          </>
+        }
+      />
     );
   }
 
   return (
-    <div className="relative">
-      {isGuest && (
-        <div className="fixed top-0 left-0 right-0 z-40 flex items-center justify-center gap-2 border-b border-yellow-200 bg-yellow-50 px-4 py-2 text-xs font-medium text-yellow-700 backdrop-blur-sm">
-          <span className="h-1.5 w-1.5 rounded-full bg-yellow-500 animate-pulse" />
-          <span>Guest mode - drawings are not saved. <button onClick={() => window.location.href = "/signin"} className="underline hover:text-yellow-800">Sign in to save</button></span>
-        </div>
-      )}
-      <ConnectionBadge state={connState} isGuest={isGuest} />
-      <Canvas roomId={roomId} socket={socket} isGuest={isGuest} />
-    </div>
-  );
-}
-
-function ConnectionBadge({ state, isGuest }: { state: ConnectionState; isGuest: boolean }) {
-  const config = {
-    connecting: { color: "text-yellow-600", bg: "bg-yellow-50 border-yellow-200", label: "Connecting" },
-    connected: { color: "text-green-600", bg: "bg-green-50 border-green-200", label: isGuest ? "Connected (Guest)" : "Connected" },
-    disconnected: { color: "text-yellow-600", bg: "bg-yellow-50 border-yellow-200", label: "Reconnecting" },
-    error: { color: "text-red-600", bg: "bg-red-50 border-red-200", label: "Error" },
-  };
-
-  const c = config[state];
-
-  return (
-    <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full border ${c.bg} px-3 py-1.5 text-xs ${c.color} backdrop-blur-sm shadow-sm`}>
-      <Wifi className="h-3 w-3" />
-      {c.label}
-      {isGuest && state === "connected" && (
-        <Lock className="h-3 w-3 text-yellow-500" />
-      )}
-    </div>
+    <Canvas
+      roomId={roomId}
+      socket={socket}
+      isGuest={isGuest}
+      initialShapes={shapes}
+      roomName={roomName}
+      connection={connection}
+      attempt={attempt}
+      onReconnect={retry}
+    />
   );
 }
