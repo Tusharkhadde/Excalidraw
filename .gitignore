@@ -36,3 +36,12 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+build-fe.log
+improvements.md
+lint-fe.log
+start.cmd
+tsc-fe.log
+tsc-be.log
+tsc-http.log
+tsc-ws.log
+start.ps1
