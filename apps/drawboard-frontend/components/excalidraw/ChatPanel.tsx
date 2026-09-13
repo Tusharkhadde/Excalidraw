@@ -2,6 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { MessageCircle, Send, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ChatMessage {
   userId: string;
@@ -11,21 +16,32 @@ interface ChatMessage {
 }
 
 interface ChatPanelProps {
-  socket: WebSocket;
+  socket: WebSocket | null;
   roomId: string;
-  isDark: boolean;
   currentUserId?: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function ChatPanel({ socket, roomId, isDark, currentUserId }: ChatPanelProps) {
-  const [open, setOpen] = useState(false);
+function initials(name: string) {
+  return name
+    .split(" ")
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+/** Room chat. Always listens so messages are never missed while the panel is closed. */
+export function ChatPanel({ socket, roomId, currentUserId, open, onOpenChange }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [unread, setUnread] = useState(0);
   const [input, setInput] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
+  const openRef = useRef(open);
+  openRef.current = open;
 
   useEffect(() => {
-    if (!open) return;
-
+    if (!socket) return;
     const handler = (event: MessageEvent) => {
       let data: Record<string, unknown>;
       try {
@@ -33,105 +49,117 @@ export function ChatPanel({ socket, roomId, isDark, currentUserId }: ChatPanelPr
       } catch {
         return;
       }
-      if (data.type === "chat" && data.roomId === roomId) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            userId: String(data.userId ?? ""),
-            userName: String(data.userName ?? "Unknown"),
-            message: String(data.message ?? ""),
-            timestamp: Date.now(),
-          },
-        ]);
-      }
+      if (data.type !== "chat" || data.roomId !== roomId) return;
+      const msg: ChatMessage = {
+        userId: String(data.userId ?? ""),
+        userName: String(data.userName ?? "Someone"),
+        message: String(data.message ?? ""),
+        timestamp: Date.now(),
+      };
+      setMessages((prev) => [...prev, msg]);
+      if (!openRef.current && msg.userId !== currentUserId) setUnread((n) => n + 1);
     };
-
     socket.addEventListener("message", handler);
     return () => socket.removeEventListener("message", handler);
-  }, [open, socket, roomId]);
+  }, [socket, roomId, currentUserId]);
 
   useEffect(() => {
-    if (listRef.current) {
-      listRef.current.scrollTop = listRef.current.scrollHeight;
-    }
-  }, [messages]);
+    if (open) setUnread(0);
+  }, [open]);
+
+  useEffect(() => {
+    if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
+  }, [messages, open]);
 
   const send = () => {
     const text = input.trim();
-    if (!text) return;
+    if (!text || !socket) return;
     socket.send(JSON.stringify({ type: "chat", roomId, message: text }));
     setInput("");
   };
 
-  const border = isDark ? "border-white/10" : "border-gray-200";
-  const bg = isDark ? "bg-gray-900/95" : "bg-white";
-  const text = isDark ? "text-gray-200" : "text-gray-800";
-  const muted = isDark ? "text-gray-500" : "text-gray-400";
-
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className={`flex h-10 w-10 items-center justify-center rounded-2xl ${bg} ${isDark ? "text-blue-400" : "text-blue-600"} shadow-lg ${isDark ? "" : "shadow-gray-200/50"} transition-colors`}
-        title="Open chat"
-      >
-        <MessageCircle className="h-5 w-5" strokeWidth={1.8} />
-      </button>
-    );
-  }
-
   return (
-    <div
-      className={`absolute bottom-14 right-0 z-30 flex h-[400px] w-80 flex-col rounded-2xl border ${border} ${bg} shadow-2xl backdrop-blur-sm transition-colors`}
-    >
-      <div className={`flex items-center justify-between border-b ${border} px-4 py-3`}>
-        <span className={`text-sm font-semibold ${text}`}>Chat</span>
-        <button
-          onClick={() => setOpen(false)}
-          className={`flex h-7 w-7 items-center justify-center rounded-lg ${muted} hover:bg-gray-100 dark:hover:bg-gray-800`}
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
+    <div className="pointer-events-auto relative">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={() => onOpenChange(!open)}
+            aria-label={open ? "Close chat" : "Open chat"}
+            aria-expanded={open}
+            className={cn(
+              "relative grid size-11 place-items-center rounded-2xl transition-all active:scale-95",
+              open ? "bg-primary text-primary-foreground shadow-glow" : "glass text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <MessageCircle size={18} />
+            {unread > 0 && !open && (
+              <span className="absolute -right-1 -top-1 grid min-w-5 animate-check-pop place-items-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground">
+                {unread > 9 ? "9+" : unread}
+              </span>
+            )}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top">
+          Chat <kbd className="ml-1 rounded bg-background/20 px-1 font-mono text-[10px]">C</kbd>
+        </TooltipContent>
+      </Tooltip>
 
-      <div ref={listRef} className="flex-1 space-y-2 overflow-y-auto px-4 py-3">
-        {messages.map((msg, i) => {
-          const isMe = msg.userId === currentUserId;
-          return (
-            <div key={i} className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
-              <span className={`text-[11px] ${muted} px-1`}>{isMe ? "You" : msg.userName}</span>
-              <div
-                className={`mt-0.5 max-w-[80%] rounded-xl px-3 py-1.5 text-sm leading-snug ${
-                  isMe
-                    ? "bg-blue-500 text-white"
-                    : isDark
-                      ? "bg-gray-800 text-gray-200"
-                      : "bg-gray-100 text-gray-800"
-                }`}
-              >
-                {msg.message}
-              </div>
+      {open && (
+        <div className="glass absolute bottom-14 right-0 flex h-[420px] w-[320px] animate-scale-in flex-col overflow-hidden rounded-2xl">
+          <div className="flex items-center justify-between border-b px-4 py-3">
+            <div>
+              <p className="text-sm font-semibold">Room chat</p>
+              <p className="text-[11px] text-muted-foreground">{socket ? "Messages stay in this session" : "Connect to chat"}</p>
             </div>
-          );
-        })}
-      </div>
+            <Button variant="ghost" size="icon-sm" onClick={() => onOpenChange(false)} aria-label="Close chat">
+              <X />
+            </Button>
+          </div>
 
-      <div className={`flex items-center gap-2 border-t ${border} p-3`}>
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") send(); }}
-          placeholder="Type a message..."
-          className={`flex-1 rounded-lg border ${border} bg-transparent px-3 py-1.5 text-sm outline-none ${text} placeholder:text-gray-400`}
-        />
-        <button
-          onClick={send}
-          disabled={!input.trim()}
-          className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500 text-white disabled:opacity-40"
-        >
-          <Send className="h-4 w-4" />
-        </button>
-      </div>
+          <div ref={listRef} className="nice-scroll flex-1 space-y-3 overflow-y-auto px-4 py-3">
+            {messages.length === 0 && (
+              <div className="grid h-full place-items-center text-center">
+                <div>
+                  <MessageCircle className="mx-auto size-6 text-muted-foreground/50" />
+                  <p className="mt-2 text-xs text-muted-foreground">Say hi to whoever’s on the board.</p>
+                </div>
+              </div>
+            )}
+            {messages.map((msg, i) => {
+              const isMe = msg.userId === currentUserId;
+              return (
+                <div key={i} className={cn("flex items-end gap-2", isMe && "flex-row-reverse")}>
+                  {!isMe && (
+                    <Avatar className="size-6 border">
+                      <AvatarFallback className="bg-primary/10 text-[9px] text-primary">{initials(msg.userName)}</AvatarFallback>
+                    </Avatar>
+                  )}
+                  <div className={cn("max-w-[78%]", isMe ? "text-right" : "text-left")}>
+                    {!isMe && <span className="mb-0.5 block px-1 text-[10px] text-muted-foreground">{msg.userName}</span>}
+                    <div className={cn("inline-block rounded-2xl px-3 py-1.5 text-sm leading-snug", isMe ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-muted")}>
+                      {msg.message}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <form
+            className="flex items-center gap-2 border-t p-2.5"
+            onSubmit={(e) => {
+              e.preventDefault();
+              send();
+            }}
+          >
+            <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder={socket ? "Message the room…" : "Offline"} disabled={!socket} className="h-9 border-transparent bg-muted/60 shadow-none" />
+            <Button type="submit" size="icon-sm" disabled={!input.trim() || !socket} aria-label="Send">
+              <Send />
+            </Button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
