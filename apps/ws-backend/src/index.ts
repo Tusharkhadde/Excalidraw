@@ -1,3 +1,4 @@
+import "./loadEnv";
 import { WebSocket, WebSocketServer } from "ws";
 import { verifyJwt } from "@repo/backend-common/config";
 import { prismaClient } from "@repo/db/client";
@@ -141,6 +142,27 @@ wss.on("connection", async (ws, request) => {
             }
 
             broadcastToRoom(roomId, { type: "update", roomId, shape, userId: client.userId });
+            return;
+        }
+
+        if (type === "erase") {
+            const roomId = String(parsed.roomId ?? "");
+            const shapeId = String(parsed.shapeId ?? "");
+            if (!roomId || !shapeId) {
+                ws.send(JSON.stringify({ type: "error", message: "Invalid erase payload" }));
+                return;
+            }
+
+            if (!client.isGuest && client.userId) {
+                try {
+                    await prismaClient.chat.deleteMany({
+                        where: { roomId: Number(roomId), message: { contains: shapeId } },
+                    });
+                } catch {
+                }
+            }
+
+            broadcastToRoom(roomId, { type: "erase", roomId, shapeId, userId: client.userId }, ws);
             return;
         }
 
