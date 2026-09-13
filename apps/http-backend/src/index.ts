@@ -1,3 +1,4 @@
+import "./loadEnv";
 import express from "express";
 import bcrypt from "bcryptjs";
 import { middleware } from "./middleware";
@@ -119,7 +120,10 @@ app.post("/room", middleware, async (req, res) => {
 
 app.get("/room/:slug", async (req, res) => {
     const slug = req.params.slug;
-    const room = await prismaClient.room.findUnique({ where: { slug } });
+    // Board links use the numeric id, invite links use the slug — accept either.
+    const room = /^\d+$/.test(slug)
+        ? await prismaClient.room.findUnique({ where: { id: Number(slug) } })
+        : await prismaClient.room.findUnique({ where: { slug } });
     if (!room) {
         res.status(404).json({ message: "Room not found" });
         return;
