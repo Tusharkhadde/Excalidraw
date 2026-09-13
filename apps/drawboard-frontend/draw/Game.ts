@@ -1,10 +1,8 @@
 import { Tool } from "@/components/Canvas";
-import { getExistingShapes } from "./http";
 import type { Shape } from "@repo/common/types";
 
 const STROKE_COLOR = "#1e1e1e";
 const STROKE_WIDTH = 2;
-const FONT_SIZE = 20;
 const HANDLE_SIZE = 8;
 
 function makeId() {
@@ -108,7 +106,7 @@ export class Game {
     private startX = 0;
     private startY = 0;
     private selectedTool: Tool = "selection";
-    private socket: WebSocket;
+    private socket: WebSocket | null;
     private pencilPath: { x: number; y: number }[] = [];
     private panOffset = { x: 0, y: 0 };
     private zoom = 1;
@@ -133,6 +131,7 @@ export class Game {
 
     private strokeColor: string = STROKE_COLOR;
     private fillColor: string = "transparent";
+    private strokeWidth: number = STROKE_WIDTH;
 
     private undoStack: Shape[][] = [];
     private redoStack: Shape[][] = [];
@@ -149,10 +148,10 @@ export class Game {
     private boundKeyUp: (e: KeyboardEvent) => void;
     private boundContextMenu: (e: MouseEvent) => void;
 
-    constructor(canvas: HTMLCanvasElement, roomId: string, socket: WebSocket) {
+    constructor(canvas: HTMLCanvasElement, roomId: string, socket: WebSocket | null, initialShapes: Shape[] = []) {
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d")!;
-        this.existingShapes = [];
+        this.existingShapes = structuredClone(initialShapes);
         this.roomId = roomId;
         this.socket = socket;
         this.selectedTool = "selection";
@@ -167,21 +166,21 @@ export class Game {
         this.boundKeyUp = this.handleKeyUp.bind(this);
         this.boundContextMenu = (e: MouseEvent) => e.preventDefault();
 
-        this.init();
+        this.render();
         this.initSocket();
         this.initHandlers();
     }
 
     destroy() {
-        this.canvas.removeEventListener("mousedown", this.boundMouseDown);
-        this.canvas.removeEventListener("mouseup", this.boundMouseUp);
-        this.canvas.removeEventListener("mousemove", this.boundMouseMove);
+        this.canvas.removeEventListener("pointerdown", this.boundMouseDown);
+        window.removeEventListener("pointerup", this.boundMouseUp);
+        window.removeEventListener("pointermove", this.boundMouseMove);
         this.canvas.removeEventListener("dblclick", this.boundDblClick);
         this.canvas.removeEventListener("wheel", this.boundWheel);
         this.canvas.removeEventListener("contextmenu", this.boundContextMenu);
         window.removeEventListener("keydown", this.boundKeyDown);
         window.removeEventListener("keyup", this.boundKeyUp);
-        this.socket.removeEventListener("message", this.boundMessage);
+        this.socket?.removeEventListener("message", this.boundMessage);
     }
 
     setTool(tool: Tool) {
@@ -231,10 +230,33 @@ export class Game {
 
     setStrokeColor(color: string) { this.strokeColor = color; }
     setFillColor(color: string) { this.fillColor = color; }
+    setStrokeWidth(width: number) { this.strokeWidth = width; }
+    getStrokeWidth(): number { return this.strokeWidth; }
     getStrokeColor(): string { return this.strokeColor; }
     getFillColor(): string { return this.fillColor; }
 
     private canvasBg: string = "#ffffff";
+
+    /**
+     * Render-time contrast guard: ink strokes on a dark board (or white strokes on a light one)
+     * are swapped so shapes never disappear when the theme flips. Stored data is untouched.
+     */
+    private themedStroke(color: string): string {
+        const lum = (hex: string): number | null => {
+            const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
+            if (!m) return null;
+            let h = m[1]!;
+            if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+            const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+            return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+        };
+        const bg = lum(this.canvasBg);
+        const fg = lum(color);
+        if (bg === null || fg === null) return color;
+        if (bg < 0.3 && fg < 0.2) return "#f5f5f7";
+        if (bg >= 0.3 && fg > 0.9) return "#1e1e1e";
+        return color;
+    }
 
     addShape(shape: Shape) {
         this.pushUndo();
@@ -262,7 +284,7 @@ export class Game {
         this.existingShapes = this.undoStack.pop()!;
         this.selectedShapeId = null;
         this.render();
-        this.socket.send(JSON.stringify({ type: "sync", roomId: this.roomId, shapes: this.existingShapes }));
+        this.send(JSON.stringify({ type: "sync", roomId: this.roomId, shapes: this.existingShapes }));
     }
 
     redo() {
@@ -271,24 +293,40 @@ export class Game {
         this.existingShapes = this.redoStack.pop()!;
         this.selectedShapeId = null;
         this.render();
-        this.socket.send(JSON.stringify({ type: "sync", roomId: this.roomId, shapes: this.existingShapes }));
+        this.send(JSON.stringify({ type: "sync", roomId: this.roomId, shapes: this.existingShapes }));
     }
 
     getShapes(): Shape[] { return this.existingShapes; }
 
-    private async init() {
-        this.existingShapes = await getExistingShapes(this.roomId);
-        this.render();
+    loadShapes(shapes: Shape[]) {
+        this.existingShapes = structuredClone(shapes);
+        this.selectedShapeId = null;
+    }
+
+    canUndo(): boolean { return this.undoStack.length > 0; }
+
+    canRedo(): boolean { return this.redoStack.length > 0; }
+
+    zoomBy(factor: number) { this.setZoom(this.zoom * factor); }
+
+    redraw() { this.render(); }
+
+    toCanvasPoint(x: number, y: number) {
+        return { x: (x - this.panOffset.x) / this.zoom, y: (y - this.panOffset.y) / this.zoom };
+    }
+
+    send(data: string) {
+        if (this.socket?.readyState === WebSocket.OPEN) this.socket.send(data);
     }
 
     private initSocket() {
-        this.socket.addEventListener("message", this.boundMessage);
+        this.socket?.addEventListener("message", this.boundMessage);
     }
 
     private initHandlers() {
-        this.canvas.addEventListener("mousedown", this.boundMouseDown);
-        this.canvas.addEventListener("mouseup", this.boundMouseUp);
-        this.canvas.addEventListener("mousemove", this.boundMouseMove);
+        this.canvas.addEventListener("pointerdown", this.boundMouseDown);
+        window.addEventListener("pointerup", this.boundMouseUp);
+        window.addEventListener("pointermove", this.boundMouseMove);
         this.canvas.addEventListener("dblclick", this.boundDblClick);
         this.canvas.addEventListener("wheel", this.boundWheel, { passive: false });
         this.canvas.addEventListener("contextmenu", this.boundContextMenu);
@@ -366,7 +404,7 @@ export class Game {
     }
 
     private drawShape(shape: Shape, isPreview: boolean = false) {
-        this.ctx.strokeStyle = shape.strokeColor || STROKE_COLOR;
+        this.ctx.strokeStyle = this.themedStroke(shape.strokeColor || STROKE_COLOR);
         this.ctx.fillStyle = shape.fillColor || "transparent";
         this.ctx.lineWidth = shape.strokeWidth || STROKE_WIDTH;
         this.ctx.lineCap = "round";
@@ -480,8 +518,8 @@ export class Game {
     }
 
     private drawText(x: number, y: number, text: string, fontSize: number, isSelected: boolean, shapeStrokeColor?: string) {
-        this.ctx.font = fontSize + 'px "Caveat","Virgil","Segoe UI Emoji",sans-serif';
-        this.ctx.fillStyle = shapeStrokeColor || this.strokeColor;
+        this.ctx.font = fontSize + 'px "Comic Sans MS","Comic Sans","Chalkboard SE","Comic Neue",cursive';
+        this.ctx.fillStyle = this.themedStroke(shapeStrokeColor || this.strokeColor);
         this.ctx.textBaseline = "alphabetic";
         this.ctx.fillText(text, x, y);
         if (isSelected) {
@@ -607,7 +645,7 @@ export class Game {
             const points = getSafePencilPoints(shape);
             return { x: points[0]?.x ?? 0, y: points[0]?.y ?? 0 };
         }
-        return { x: (shape as any).x ?? 0, y: (shape as any).y ?? 0 };
+        return { x: shape.x, y: shape.y };
     }
 
     private handleMouseDown(e: MouseEvent) {
@@ -628,12 +666,12 @@ export class Game {
                     this.isResizing = true;
                     this.activeHandle = handleType;
                     this.selectedShapeId = hit.id;
-                    const sx = hit.type === "circle" ? hit.centerX : (hit as any).x ?? 0;
-                    const sy = hit.type === "circle" ? hit.centerY : (hit as any).y ?? 0;
+                    this.pushUndo();
+                    const { x: sx, y: sy } = this.getShapeStartPoint(hit);
                     this.resizeStart = {
                         x: pos.x, y: pos.y, shapeX: sx, shapeY: sy,
-                        shapeW: (hit as any).width ?? 0, shapeH: (hit as any).height ?? 0,
-                        shapeFontSize: hit.type === "text" ? (hit as any).fontSize ?? 32 : 0,
+                        shapeW: "width" in hit ? hit.width : 0, shapeH: "height" in hit ? hit.height : 0,
+                        shapeFontSize: hit.type === "text" ? hit.fontSize : 0,
                         centerX: hit.type === "circle" ? hit.centerX : 0,
                         centerY: hit.type === "circle" ? hit.centerY : 0,
                         radius: hit.type === "circle" ? hit.radius : 0,
@@ -642,6 +680,7 @@ export class Game {
                     return;
                 }
                 this.selectedShapeId = hit.id;
+                this.pushUndo();
                 const start = this.getShapeStartPoint(hit);
                 this.dragOffset = { x: pos.x - start.x, y: pos.y - start.y };
                 this.clicked = true;
@@ -719,9 +758,9 @@ export class Game {
         this.ctx.save();
         this.ctx.translate(this.panOffset.x, this.panOffset.y);
         this.ctx.scale(this.zoom, this.zoom);
-        this.ctx.strokeStyle = this.strokeColor;
+        this.ctx.strokeStyle = this.themedStroke(this.strokeColor);
         this.ctx.fillStyle = "transparent";
-        this.ctx.lineWidth = STROKE_WIDTH;
+        this.ctx.lineWidth = this.strokeWidth;
         this.ctx.lineCap = "round";
         this.ctx.lineJoin = "round";
         switch (this.selectedTool) {
@@ -782,7 +821,7 @@ export class Game {
             this.isResizing = false;
             this.activeHandle = null;
             const shape = this.existingShapes.find((s) => s.id === this.selectedShapeId);
-            if (shape) { this.pushUndo(); this.socket.send(JSON.stringify({ type: "update", roomId: this.roomId, shape })); }
+            if (shape) this.send(JSON.stringify({ type: "update", roomId: this.roomId, shape }));
             this.updateCursor();
             return;
         }
@@ -794,7 +833,7 @@ export class Game {
         if (this.selectedTool === "selection") {
             if (this.clicked && this.selectedShapeId) {
                 const shape = this.existingShapes.find((s) => s.id === this.selectedShapeId);
-                if (shape) { this.pushUndo(); this.socket.send(JSON.stringify({ type: "update", roomId: this.roomId, shape })); }
+                if (shape) this.send(JSON.stringify({ type: "update", roomId: this.roomId, shape }));
             }
             this.clicked = false;
             return;
@@ -808,34 +847,34 @@ export class Game {
         switch (this.selectedTool) {
             case "rectangle":
                 if (Math.abs(width) > 3 || Math.abs(height) > 3)
-                    shape = { type: "rect", id, x: this.startX, y: this.startY, width, height, strokeColor: this.strokeColor, fillColor: this.fillColor, strokeWidth: STROKE_WIDTH };
+                    shape = { type: "rect", id, x: this.startX, y: this.startY, width, height, strokeColor: this.strokeColor, fillColor: this.fillColor, strokeWidth: this.strokeWidth };
                 break;
             case "diamond":
                 if (Math.abs(width) > 3 || Math.abs(height) > 3)
-                    shape = { type: "diamond", id, x: this.startX, y: this.startY, width, height, strokeColor: this.strokeColor, fillColor: this.fillColor, strokeWidth: STROKE_WIDTH };
+                    shape = { type: "diamond", id, x: this.startX, y: this.startY, width, height, strokeColor: this.strokeColor, fillColor: this.fillColor, strokeWidth: this.strokeWidth };
                 break;
             case "circle":
                 if (Math.abs(width) > 3 || Math.abs(height) > 3)
-                    shape = { type: "circle", id, centerX: this.startX + width / 2, centerY: this.startY + height / 2, radius: Math.max(Math.abs(width), Math.abs(height)) / 2, strokeColor: this.strokeColor, fillColor: this.fillColor, strokeWidth: STROKE_WIDTH };
+                    shape = { type: "circle", id, centerX: this.startX + width / 2, centerY: this.startY + height / 2, radius: Math.max(Math.abs(width), Math.abs(height)) / 2, strokeColor: this.strokeColor, fillColor: this.fillColor, strokeWidth: this.strokeWidth };
                 break;
             case "arrow":
                 if (Math.abs(width) > 3 || Math.abs(height) > 3)
-                    shape = { type: "arrow", id, x: this.startX, y: this.startY, width, height, strokeColor: this.strokeColor, fillColor: this.fillColor, strokeWidth: STROKE_WIDTH };
+                    shape = { type: "arrow", id, x: this.startX, y: this.startY, width, height, strokeColor: this.strokeColor, fillColor: this.fillColor, strokeWidth: this.strokeWidth };
                 break;
             case "line":
                 if (Math.abs(width) > 3 || Math.abs(height) > 3)
-                    shape = { type: "line", id, x: this.startX, y: this.startY, width, height, strokeColor: this.strokeColor, fillColor: this.fillColor, strokeWidth: STROKE_WIDTH };
+                    shape = { type: "line", id, x: this.startX, y: this.startY, width, height, strokeColor: this.strokeColor, fillColor: this.fillColor, strokeWidth: this.strokeWidth };
                 break;
             case "pencil":
                 if (this.pencilPath.length > 1)
-                    shape = { type: "pencil", id, points: [...this.pencilPath], strokeColor: this.strokeColor, fillColor: this.fillColor, strokeWidth: STROKE_WIDTH };
+                    shape = { type: "pencil", id, points: [...this.pencilPath], strokeColor: this.strokeColor, fillColor: this.fillColor, strokeWidth: this.strokeWidth };
                 this.pencilPath = [];
                 break;
         }
         if (shape) {
             this.pushUndo();
             this.existingShapes.push(shape);
-            this.socket.send(JSON.stringify({ type: "draw", roomId: this.roomId, shape }));
+            this.send(JSON.stringify({ type: "draw", roomId: this.roomId, shape }));
         }
         this.render();
     }
@@ -881,7 +920,7 @@ export class Game {
             if (shape.id && !this.erasedIds.has(shape.id) && this.hitTest(shape, px, py)) {
                 this.erasedIds.add(shape.id);
                 this.existingShapes = this.existingShapes.filter((s) => s.id !== shape.id);
-                this.socket.send(JSON.stringify({ type: "erase", roomId: this.roomId, shapeId: shape.id }));
+                this.send(JSON.stringify({ type: "erase", roomId: this.roomId, shapeId: shape.id }));
                 this.render();
             }
         }
@@ -935,7 +974,7 @@ export class Game {
             const id = this.selectedShapeId;
             this.existingShapes = this.existingShapes.filter((s) => s.id !== id);
             this.selectedShapeId = null;
-            this.socket.send(JSON.stringify({ type: "erase", roomId: this.roomId, shapeId: id }));
+            this.send(JSON.stringify({ type: "erase", roomId: this.roomId, shapeId: id }));
             this.render();
         }
         if (e.key === "Escape") { this.selectedShapeId = null; this.render(); }

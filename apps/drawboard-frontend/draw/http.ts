@@ -29,10 +29,10 @@ function normalizeShape(shape: unknown): Shape | null {
     return candidate as Shape;
 }
 
-export async function getExistingShapes(roomId: string): Promise<Shape[]> {
-    try {
-        const res = await fetch(`${HTTP_BACKEND}/chats/${roomId}`);
-        if (!res.ok) return [];
+export async function getExistingShapes(roomId: string, signal?: AbortSignal): Promise<Shape[]> {
+        if (roomId === "guest") return [];
+        const res = await fetch(`${HTTP_BACKEND}/chats/${roomId}`, { signal });
+        if (!res.ok) throw new Error("Couldn’t load this board. Check the room ID and try again.");
         const data = await res.json();
         const messages: { message: string }[] = data.messages ?? [];
 
@@ -49,7 +49,4 @@ export async function getExistingShapes(roomId: string): Promise<Shape[]> {
             }
         }
         return shapes;
-    } catch {
-        return [];
-    }
 }
