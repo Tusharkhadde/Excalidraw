@@ -9,11 +9,12 @@
   },
   "dependencies": {
     "@repo/db": "workspace:*",
-    "dotenv": "^16.4.7",
     "@types/cors": "^2.8.17",
-    "cors": "^2.8.5",
     "bcryptjs": "^2.4.3",
-    "express": "^4.21.2"
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "google-auth-library": "^11.0.2"
   },
   "devDependencies": {
     "@repo/backend-common": "workspace:*",

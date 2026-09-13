@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { Brand } from "./Brand";
 import { BoardPreview } from "./BoardPreview";
+import { GoogleSignInButton } from "./GoogleSignInButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +36,22 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
   function fail(message: string) {
     setError(message);
     setShake((n) => n + 1);
+  }
+
+  async function handleGoogle(idToken: string) {
+    setError("");
+    setIsSubmitting(true);
+    try {
+      const data = await api.post<{ token: string }>("/auth/google", { idToken });
+      signin(data.token);
+      toast.success(isSignin ? "Welcome back." : "You're in — boards are ready to save.");
+      router.replace("/");
+    } catch (err) {
+      fail(err instanceof ApiError ? err.message : "Google sign-in failed. Please try again.");
+      throw err instanceof Error ? err : new Error("Google sign-in failed.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -111,7 +128,21 @@ export function AuthPage({ isSignin }: { isSignin: boolean }) {
             </div>
           )}
 
-          <form key={shake} className={cn("mt-8 space-y-5", shake > 0 && "animate-shake")} onSubmit={handleSubmit} aria-busy={isSubmitting} noValidate={false}>
+          <div className="mt-8 space-y-3">
+            <GoogleSignInButton
+              mode={isSignin ? "signin" : "signup"}
+              disabled={isSubmitting}
+              onCredential={handleGoogle}
+              onError={(message) => fail(message)}
+            />
+            <div className="flex items-center gap-4 py-1">
+              <Separator className="flex-1" />
+              <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">or email</span>
+              <Separator className="flex-1" />
+            </div>
+          </div>
+
+          <form key={shake} className={cn("space-y-5", shake > 0 && "animate-shake")} onSubmit={handleSubmit} aria-busy={isSubmitting} noValidate={false}>
             {signupMode && (
               <div className="space-y-2">
                 <Label htmlFor="name">Your name</Label>

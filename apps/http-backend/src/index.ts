@@ -1,8 +1,9 @@
 import "./loadEnv";
 import express from "express";
 import bcrypt from "bcryptjs";
+import { OAuth2Client } from "google-auth-library";
 import { middleware } from "./middleware";
-import { CreateUserSchema, SigninSchema, CreateRoomSchema } from "@repo/common/types";
+import { CreateUserSchema, SigninSchema, CreateRoomSchema, GoogleAuthSchema } from "@repo/common/types";
 import { signJwt } from "@repo/backend-common/config";
 import { prismaClient } from "@repo/db/client";
 import cors from "cors";
@@ -10,6 +11,8 @@ import cors from "cors";
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
 
 function normalizeEmail(email: string) {
     return email.trim().toLowerCase();
@@ -56,8 +59,12 @@ app.post("/signin", async (req, res) => {
     const email = normalizeEmail(parsed.data.email);
 
     const user = await prismaClient.user.findUnique({ where: { email } });
-    if (!user) {
-        res.status(401).json({ message: "Invalid email or password" });
+    if (!user || !user.password) {
+        res.status(401).json({
+            message: user && !user.password
+                ? "This account uses Google. Continue with Google to sign in."
+                : "Invalid email or password",
+        });
         return;
     }
 
@@ -79,6 +86,62 @@ app.post("/signin", async (req, res) => {
 
     const token = await signJwt(user.id);
     res.json({ token });
+});
+
+app.post("/auth/google", async (req, res) => {
+    const parsed = GoogleAuthSchema.safeParse(req.body);
+    if (!parsed.success) {
+        res.status(400).json({ message: "Invalid inputs", errors: parsed.error.flatten() });
+        return;
+    }
+
+    const clientId = process.env.GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+        res.status(503).json({ message: "Google sign-in is not configured on this server." });
+        return;
+    }
+
+    try {
+        const ticket = await googleClient.verifyIdToken({
+            idToken: parsed.data.idToken,
+            audience: clientId,
+        });
+        const payload = ticket.getPayload();
+        if (!payload?.sub || !payload.email) {
+            res.status(401).json({ message: "Google could not verify this account." });
+            return;
+        }
+
+        const email = normalizeEmail(payload.email);
+        const googleId = payload.sub;
+        const name = (payload.name || email.split("@")[0] || "Drawboard user").slice(0, 100);
+        const photo = payload.picture || null;
+
+        let user = await prismaClient.user.findFirst({
+            where: { OR: [{ googleId }, { email }] },
+        });
+
+        if (user) {
+            user = await prismaClient.user.update({
+                where: { id: user.id },
+                data: {
+                    googleId: user.googleId ?? googleId,
+                    name: user.name || name,
+                    photo: user.photo || photo,
+                },
+            });
+        } else {
+            user = await prismaClient.user.create({
+                data: { email, name, photo, googleId, password: null },
+            });
+        }
+
+        const token = await signJwt(user.id);
+        res.json({ token });
+    } catch (error) {
+        console.error("[auth/google]", error);
+        res.status(401).json({ message: "Google sign-in failed. Please try again." });
+    }
 });
 
 // ── User ──────────────────────────────────────────────────────

@@ -155,7 +155,7 @@ Browser
 ### Product
 
 - **Guest sketch** — draw instantly at `/canvas/guest` (no account)
-- **Auth** — signup / signin with JWT
+- **Auth** — signup / signin with email + password, or **Continue with Google**
 - **Workspace** — create rooms, join by link/slug, room cards
 - **Live collaboration** — shapes sync over WebSocket for everyone in the room
 - **Room chat** — in-board chat with unread badge
@@ -211,6 +211,8 @@ Minimum required:
 ```env
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/drawboard?schema=public"
 JWT_SECRET="change-me-in-production"
+GOOGLE_CLIENT_ID="your-google-client-id.apps.googleusercontent.com"
+NEXT_PUBLIC_GOOGLE_CLIENT_ID="your-google-client-id.apps.googleusercontent.com"
 ```
 
 Optional frontend overrides (create `apps/drawboard-frontend/.env.local` if needed):
@@ -256,6 +258,8 @@ The start scripts free ports `3000` / `3001` / `8080`, run Prisma generate, and 
 |----------|--------|----------|---------|
 | `DATABASE_URL` | `packages/db/.env`, backends | Yes | Postgres connection string |
 | `JWT_SECRET` | HTTP + WS backends | Yes | Sign / verify auth tokens |
+| `GOOGLE_CLIENT_ID` | `http-backend` | For Google login | Google OAuth Web Client ID |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Frontend | For Google login | Same Client ID (GIS button) |
 | `PORT` | `http-backend` | No | Defaults to `3001` |
 | `NEXT_PUBLIC_HTTP_BACKEND` | Frontend | No | API base URL |
 | `NEXT_PUBLIC_WS_URL` | Frontend | No | WebSocket URL |
@@ -294,6 +298,7 @@ pnpm turbo build --filter=http-backend
 |--------|------|------|-------------|
 | `POST` | `/signup` | — | Create account |
 | `POST` | `/signin` | — | Login → JWT |
+| `POST` | `/auth/google` | — | Google ID token → JWT (signup or signin) |
 | `GET` | `/me` | JWT | Current user |
 | `POST` | `/room` | JWT | Create room |
 | `GET` | `/rooms` | JWT | List my rooms |
@@ -330,7 +335,7 @@ Room ────── Chat
 
 | Model | Purpose |
 |-------|---------|
-| `User` | id, email, password hash, name, photo |
+| `User` | id, email, password (optional), name, photo, googleId |
 | `Room` | id, unique slug, adminId, createdAt |
 | `Chat` | Persisted room messages / drawing payloads |
 

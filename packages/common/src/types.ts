@@ -13,6 +13,10 @@ export const SigninSchema = z.object({
     password: z.string(),
 });
 
+export const GoogleAuthSchema = z.object({
+    idToken: z.string().min(1),
+});
+
 // --- Room ---
 
 export const CreateRoomSchema = z.object({
