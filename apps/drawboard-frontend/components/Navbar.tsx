@@ -1,149 +1,189 @@
 "use client";
 
 import Link from "next/link";
-import { useAuth } from "@/lib/auth";
-import { LogOut, LogIn, Menu, X, PenTool } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { ArrowUpRight, LayoutGrid, LogOut, Menu } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { cn } from "@/lib/utils";
+import { Brand } from "./Brand";
 import { Button } from "@/components/ui/button";
-import * as Dialog from "@radix-ui/react-dialog";
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-const navLinks: { label: string; href: string }[] = [
-  { label: "Product", href: "#features" },
-  { label: "How it works", href: "#how-it-works" },
-  { label: "Open source", href: "#open-source" },
+const links = [
+  { label: "Features", href: "/features" },
+  { label: "How it works", href: "/#how-it-works" },
+  { label: "About", href: "/about" },
 ];
 
+function initials(name?: string | null) {
+  if (!name) return "U";
+  return name
+    .split(" ")
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
 export function Navbar() {
-  const { token, signout } = useAuth();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { token, user, signout } = useAuth();
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-slate-800/80 bg-[#080b10]/85 text-white backdrop-blur-xl">
-      <div className="mx-auto flex h-[76px] max-w-[1280px] items-center justify-between px-6 lg:px-10">
-        <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-300 text-slate-950 shadow-[0_0_24px_rgba(45,212,191,.18)]">
-            <PenTool className="h-5 w-5 -rotate-45 text-white" />
-          </div>
-          <span className="text-xl font-semibold tracking-[-0.04em] text-white">Drawboard<span className="text-teal-300">.</span></span>
-        </Link>
+    <header className="sticky top-0 z-40">
+      <div className="absolute inset-x-0 top-0 h-[72px] bg-gradient-to-b from-background via-background/90 to-background/40 backdrop-blur-xl" />
+      <div className="absolute inset-x-0 top-[71px] h-px bg-gradient-to-r from-transparent via-border/80 to-transparent" />
 
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-10">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-            className="text-sm font-medium text-slate-400 hover:text-white transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
-          <Link href="#features" className="text-sm font-medium text-slate-400 transition-colors hover:text-white">
-            Docs
-          </Link>
+      <div className="container relative grid h-[72px] grid-cols-[1fr_auto_1fr] items-center gap-4">
+        <div className="justify-self-start">
+          <Brand />
+        </div>
 
-          <div className="flex items-center gap-4 border-l border-slate-800 pl-7">
-            {token ? (
-              <div className="flex items-center gap-3 shrink-0">
-                <Button asChild variant="secondary" size="sm" className="shrink-0 min-w-max shadow-sm hover:shadow-md transition-all">
-                  <Link href="/">Dashboard</Link>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={signout}
-                  title="Sign out"
-                  className="text-slate-400 hover:text-red-400 shrink-0 transition-colors"
-                >
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-4 shrink-0">
-                <Button asChild variant="ghost" size="default" className="min-w-max px-4 text-sm font-medium text-neutral-600 hover:bg-neutral-100 hover:text-black">
-                  <Link href="/signin">
-                    Log in
-                  </Link>
-                </Button>
-                <Button asChild variant="premium" size="default" className="nav-cta min-w-max rounded-lg px-6 py-2.5 text-sm font-semibold shadow-none transition-colors">
-                  <Link href="/signup">Get Started →</Link>
-                </Button>
-              </div>
-            )}
-          </div>
+        <nav
+          aria-label="Main navigation"
+          className="hidden items-center rounded-full border border-border/60 bg-card/70 p-1 shadow-soft backdrop-blur-md md:flex"
+        >
+          {links.map((link) => {
+            const active = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "relative rounded-full px-4 py-1.5 text-[13px] font-medium tracking-[-0.01em] text-muted-foreground transition-all duration-200 hover:text-foreground",
+                  active && "bg-background text-foreground shadow-sm",
+                )}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
-        {/* Mobile trigger */}
-        <div className="flex md:hidden items-center gap-4">
-          <Dialog.Root open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-            <Dialog.Trigger asChild>
-              <Button variant="ghost" size="icon" className="text-slate-500 hover:bg-slate-50 rounded-full">
-                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        <div className="hidden items-center justify-self-end gap-1.5 md:flex">
+          {token ? (
+            <>
+              <Button asChild variant="ghost" size="sm" className="rounded-full text-muted-foreground hover:text-foreground">
+                <Link href="/">
+                  <LayoutGrid /> Workspace
+                </Link>
               </Button>
-            </Dialog.Trigger>
-            <Dialog.Portal>
-              <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-              <Dialog.Content className="fixed top-20 left-0 right-0 bottom-0 z-50 bg-white border-t border-slate-100 shadow-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-top-[5%] data-[state=open]:slide-in-from-top-[5%] overflow-y-auto">
-                <div className="px-6 py-6 space-y-1">
-                  {navLinks.map((link) => (
-                    <Dialog.Close key={link.href} asChild>
-                      <Link
-                        href={link.href}
-                        className="block px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
-                      >
-                        {link.label}
-                      </Link>
-                    </Dialog.Close>
-                  ))}
-                  <Dialog.Close asChild>
-                    <Link
-                      href="#"
-                      className="block px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
-                    >
-                      Docs
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="rounded-full ring-offset-background transition-shadow hover:ring-2 hover:ring-primary/25 focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-label="Account menu"
+                  >
+                    <Avatar className="h-9 w-9 border border-border/80">
+                      <AvatarFallback className="bg-primary/10 text-[12px] font-semibold text-primary">{initials(user?.name)}</AvatarFallback>
+                    </Avatar>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="font-normal">
+                    <p className="text-sm font-medium">{user?.name ?? "Signed in"}</p>
+                    <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/">
+                      <LayoutGrid /> My workspace
                     </Link>
-                  </Dialog.Close>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/canvas/guest">
+                      <ArrowUpRight /> Quick sketch
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={signout} className="text-destructive focus:text-destructive">
+                    <LogOut /> Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/signin"
+                className="rounded-full px-3.5 py-2 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Log in
+              </Link>
+              <Button asChild size="sm" className="h-9 rounded-full px-4 shadow-glow">
+                <Link href="/canvas/guest">
+                  Start drawing
+                  <ArrowUpRight className="!size-3.5 opacity-90" />
+                </Link>
+              </Button>
+            </>
+          )}
+        </div>
 
-                </div>
-
-                <div className="px-6 pb-8 pt-4 border-t border-slate-100 space-y-3">
-                  {token ? (
-                    <>
-                      <Dialog.Close asChild>
-                        <Button asChild variant="secondary" size="lg" className="w-full justify-center">
-                          <Link href="/">Dashboard</Link>
-                        </Button>
-                      </Dialog.Close>
-                      <Button
-                        variant="ghost"
-                        size="lg"
-                        className="w-full justify-center text-red-400 hover:text-red-500"
-                        onClick={() => { signout(); setMobileMenuOpen(false); }}
-                      >
-                        Sign out
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Dialog.Close asChild>
-                        <Button asChild variant="outline" size="lg" className="w-full justify-center backdrop-blur-sm bg-white/50 border-slate-200/60">
-                          <Link href="/signin">
-                            <LogIn className="h-4 w-4" />
-                            Log in
-                          </Link>
-                        </Button>
-                      </Dialog.Close>
-                      <Dialog.Close asChild>
-                        <Button asChild variant="primary" size="lg" className="w-full justify-center">
-                          <Link href="/signup">Get Started</Link>
-                        </Button>
-                      </Dialog.Close>
-                    </>
-                  )}
-                </div>
-              </Dialog.Content>
-            </Dialog.Portal>
-          </Dialog.Root>
+        <div className="justify-self-end md:hidden">
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full" aria-label="Open navigation">
+                <Menu className="!size-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="flex w-[300px] flex-col">
+              <SheetHeader className="text-left">
+                <SheetTitle>
+                  <Brand />
+                </SheetTitle>
+                <SheetDescription className="sr-only">Pages and account options</SheetDescription>
+              </SheetHeader>
+              <nav className="mt-6 flex flex-col gap-1">
+                {links.map((link) => (
+                  <SheetClose asChild key={link.href}>
+                    <Link href={link.href} className="rounded-xl px-3 py-2.5 text-[15px] font-medium hover:bg-accent">
+                      {link.label}
+                    </Link>
+                  </SheetClose>
+                ))}
+              </nav>
+              <div className="mt-auto flex flex-col gap-2">
+                <SheetClose asChild>
+                  <Button asChild size="lg" className="rounded-full">
+                    <Link href={token ? "/" : "/canvas/guest"}>
+                      {token ? "My workspace" : "Start drawing"} <ArrowUpRight />
+                    </Link>
+                  </Button>
+                </SheetClose>
+                {token ? (
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="rounded-full"
+                    onClick={() => {
+                      signout();
+                      setOpen(false);
+                    }}
+                  >
+                    <LogOut /> Sign out
+                  </Button>
+                ) : (
+                  <SheetClose asChild>
+                    <Button asChild variant="outline" size="lg" className="rounded-full">
+                      <Link href="/signin">Log in</Link>
+                    </Button>
+                  </SheetClose>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>
